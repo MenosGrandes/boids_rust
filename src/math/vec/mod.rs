@@ -10,8 +10,14 @@ use std::ops::Div;
 use std::ops::Sub;
 use std::ops::{Add, Mul};
 
-use num::NumCast;
 
+
+use num::NumCast;
+macro_rules! assert_delta {
+    ($x:expr, $y:expr, $d:expr) => {
+        if !($x - $y < $d || $y - $x < $d) { panic!(); }
+    }
+}
 pub trait DotProduct<T = Self> {
     type Output;
     // add code here
@@ -269,4 +275,30 @@ fn dot_product() {
     let input = Vector2::new(x, y);
     let dot = input.dot(input);
     assert_eq!(dot, 13);
+}
+#[test]
+fn div_vec() {
+    let x = 2.3;
+    let y = 3.12;
+    let input = Vector2::new(x, y);
+    let input_2 = Vector2::new(x*2.0, y*2.0);
+    let dot =  input / input_2;
+    assert_eq!(dot, Vector2::new(0.5,0.5));
+}
+#[test]
+fn distance() {
+    let x = 2.3;
+    let y = 3.12;
+    let input = Vector2::new(x, y);
+    let input_2 = Vector2::new(x, y);
+    assert_eq!(Vector2::new(0.0,0.0), Vector2::distance(input,input_2));
+
+}
+#[test]
+fn div_scalar() {
+    let x = 2.3;
+    let y = 3.12;
+    let input = Vector2::new(x, y);
+    let dot =  input / 2.0;
+    assert_eq!(dot, Vector2::new(1.15,1.56));
 }

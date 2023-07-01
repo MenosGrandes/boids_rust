@@ -5,22 +5,20 @@ use sdl2::{
 };
 
 use crate::{
-    constants::{BOID_SIZE, SCREEN_SIZE},
+    constants::{BOID_SIZE, SCREEN_SIZE, VIEW_DISTANCE},
     graphics::renderer::Renderable,
     math::vec::*,
 };
+static mut BOID_ID: u32 = 0;
 
-trait AllignBehaviour {
-    const DISTANCE: f32;
-    fn align(&mut self);
-}
-#[derive(PartialEq)]
+#[derive(PartialEq, Copy, Clone)]
 pub struct Boid {
-    position: Vector2<f32>,
-    velocity: Vector2<f32>,
-    acceleration: Vector2<f32>,
+    pub position: Vector2<f32>,
+    pub velocity: Vector2<f32>,
+    pub acceleration: Vector2<f32>,
     color: Color,
     size: i16,
+    id: u32,
 }
 impl Boid {
     pub fn new(
@@ -30,12 +28,16 @@ impl Boid {
         color: Color,
         size: i16,
     ) -> Self {
+        unsafe {
+            BOID_ID += 1;
+        }
         Self {
             position,
             velocity,
             acceleration,
             color,
             size,
+            id: unsafe { BOID_ID },
         }
     }
 
@@ -49,6 +51,7 @@ impl Boid {
         Ok(())
     }
     pub fn update(&mut self) {
+        
         if self.position.x as u32 > (SCREEN_SIZE.x - BOID_SIZE as u32) {
             //self.position.x = 0.0//reflect(Vector2::new(0.0,-1.0));
             self.velocity = self.velocity.reflect(Vector2::new(-1.0, 0.0));
@@ -59,8 +62,33 @@ impl Boid {
         } else if self.position.y <= BOID_SIZE as f32 {
             self.velocity = self.velocity.reflect(Vector2::new(0.0, -1.0));
         }
-        self.position = self.position + self.velocity;
-        self.velocity = self.velocity + self.acceleration;
+        self.position = self.velocity + self.position;
+       // self.velocity = self.velocity + self.acceleration;
+        println!("pos : {}, vel : {}, acc : {} | id = {}",self.position,self.velocity,self.acceleration, self.id);
+    }
+    pub fn align(&mut self, other: &Vec<Boid>) {
+        let mut avg: Vector2<f32> = Vector2::zero();
+        let mut amount = 0;
+        for other_boid in other {
+            if self.id== other_boid.id{
+                break;
+            }
+            let c = Vector2::distance(self.position, other_boid.position);
+
+            if c.x.abs() < VIEW_DISTANCE && c.y.abs() < VIEW_DISTANCE {
+                avg = avg + other_boid.velocity;
+                amount += 1;
+            }
+        }
+
+        if amount > 0 {
+            let outcome = self.velocity + avg;
+            let ret = outcome / amount as f32;
+            self.velocity = self.velocity + ret;
+            const FACTOR: f32 = 0.05;
+            self.velocity = self.velocity * FACTOR;
+            println!("{}  velocity changed = ", self.velocity);
+        }
     }
 }
 
@@ -87,7 +115,7 @@ impl BoidManager {
             self.boids.push(Boid::new(
                 Vector2::new((SCREEN_SIZE.x / 2) as f32, (SCREEN_SIZE.y / 2) as f32),
                 random(-10.0, 10.0),
-                Vector2::zero(),
+                Vector2::new(0.01, 0.01),
                 random_color(),
                 BOID_SIZE,
             ));
@@ -97,10 +125,12 @@ impl BoidManager {
         self.boids = Vec::new();
     }
     pub fn update_all(&mut self) {
-        for b in self.boids.iter_mut() {
+        for i in 0..(self.boids).len() {
+            let mut b = self.boids[i];
             b.update();
+            b.align(&self.boids);
+            self.boids[i] = b;
         }
-        self.align();
     }
 }
 
@@ -115,39 +145,4 @@ impl Renderable for Boid {
         self.draw_boid(&canvas)?;
         Ok(())
     }
-}
-impl AllignBehaviour for BoidManager {
-    fn align(&mut self) {
-        let mut avg: Vector2<f32> = Vector2::zero();
-        let mut amount = 0;
-
-        /*
-        let mut b = self.boids.iter_mut(); //first boid
-        let avg = 'align: loop {
-            match b.next() {
-                Some(current_boid) => {
-                    for other_boid in self.boids.iter() {
-                        let c = Vector2::distance(current_boid.position, other_boid.position);
-                        if current_boid.position == other_boid.position {
-                            break;
-                        }
-                        println!("{} distance = ",c);
-                        if c.x.abs() < Self::DISTANCE && c.y.abs() < Self::DISTANCE {
-                            avg = avg + other_boid.velocity;
-                            amount += 1;
-                        }
-                    }
-                    let outcome = current_boid.velocity + avg;
-                    let ret =  outcome / amount as f32;
-                }
-                None => {
-                    println!("{} and amount {}", avg, amount);
-                    break 'align;
-                }
-            };
-        };*/
-
-    }
-
-    const DISTANCE: f32 = 50.0;
 }

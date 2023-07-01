@@ -4,6 +4,8 @@ pub mod logic;
 pub mod math;
 
 extern crate sdl2;
+#[macro_use]
+extern crate approx;
 
 use std::time::Duration;
 
@@ -29,7 +31,7 @@ pub fn main() -> Result<(), String> {
     let mut fps_manager: FPSManager = FPSManager::new();
     fps_manager.set_framerate(120)?;
     let mut boid_manager = BoidManager::new();
-    boid_manager.spawn_boid(1);
+    boid_manager.spawn_boid(2);
     let mut event_pump = gss.sdl_context.event_pump()?;
     let mut renderer = RendererManager::new(window, gss)?;
     'running: loop {
@@ -53,7 +55,7 @@ pub fn main() -> Result<(), String> {
                 _ => {}
             }
         }
-        renderer.draw_string(fps_manager.get_framerate().to_string())?;
+        renderer.draw_string(boid_manager.boids[0].position.to_string())?;
         renderer.draw(&boid_manager.boids)?;
         ::std::thread::sleep(Duration::new(
             0,

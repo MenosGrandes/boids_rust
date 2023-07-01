@@ -9,3 +9,4 @@ edition = "2021"
 sdl2 = {version = "0.35", features = ["gfx", "ttf"] }
 rand = "0.8.5"
 num = "0.4.0"
+approx = "0.5.1"
