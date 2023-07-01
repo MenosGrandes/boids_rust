@@ -29,7 +29,7 @@ pub fn main() -> Result<(), String> {
     let mut fps_manager: FPSManager = FPSManager::new();
     fps_manager.set_framerate(120)?;
     let mut boid_manager = BoidManager::new();
-    boid_manager.spawn_boid(20);
+    boid_manager.spawn_boid(1);
     let mut event_pump = gss.sdl_context.event_pump()?;
     let mut renderer = RendererManager::new(window, gss)?;
     'running: loop {
@@ -41,11 +41,11 @@ pub fn main() -> Result<(), String> {
                     ..
                 } => match keycode {
                     Keycode::W => {
-                        boid_manager.spawn_boid(10);
+                        boid_manager.spawn_boid(1);
                     }
                     Keycode::R => {
                         boid_manager.remove_all_boids();
-                        boid_manager.spawn_boid(10);
+                        boid_manager.spawn_boid(1);
                     }
                     Keycode::Escape => break 'running,
                     _ => {}
@@ -55,7 +55,10 @@ pub fn main() -> Result<(), String> {
         }
         renderer.draw_string(fps_manager.get_framerate().to_string())?;
         renderer.draw(&boid_manager.boids)?;
-        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / fps_manager.get_framerate() as u32));
+        ::std::thread::sleep(Duration::new(
+            0,
+            1_000_000_000u32 / fps_manager.get_framerate() as u32,
+        ));
         boid_manager.update_all();
 
         // The rest of the game loop goes here...

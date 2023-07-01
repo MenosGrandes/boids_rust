@@ -1,7 +1,7 @@
 use crate::logic::boid::Boid;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
-use sdl2::render:: WindowCanvas;
+use sdl2::render::WindowCanvas;
 use sdl2::ttf;
 use sdl2::video::Window;
 
@@ -12,7 +12,7 @@ macro_rules! rect(
 );
 
 pub trait Renderable {
-    fn render(&mut self, canvas: &WindowCanvas) -> Result<() , String>;
+    fn render(&mut self, canvas: &WindowCanvas) -> Result<(), String>;
 }
 
 pub struct Writer<'ttf, 'b> {
@@ -81,18 +81,13 @@ impl<'ttf, 'b> RendererManager<'ttf, 'b> {
             .map_err(|e| e.to_string())?;
         //let TextureQuery { width, height, .. } = texture.query();
 
-        let target = self. get_upper_rect(64,64);
+        let target = self.get_upper_rect(64, 64);
 
         self.canvas.copy(&texture, None, Some(target))?;
         self.canvas.present();
         Ok(())
     }
-    fn get_upper_rect(
-        &self,
-        rect_width: u32,
-        rect_height: u32) ->Rect
-    {
-        rect!(0,0, rect_height,rect_width)
+    fn get_upper_rect(&self, rect_width: u32, rect_height: u32) -> Rect {
+        rect!(0, 0, rect_height, rect_width)
     }
-
 }
