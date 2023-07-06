@@ -1,30 +1,41 @@
 use sdl2::{
     gfx::primitives::{DrawRenderer, ToColor},
     pixels::Color,
+    rect::Rect,
     render::WindowCanvas,
 };
 
 use crate::{
-    constants::{BOID_SIZE, SCREEN_SIZE, VIEW_DISTANCE},
+    constants::{
+        BehaviourEnabled, BEHAVIOUR_ENABLED, BOID_SIZE, BORDER_BEHAVIOUR, DRAW_VIEW,
+        MAX_BOID_FORCE, SCREEN_SIZE, VIEW_DISTANCE,
+    },
     graphics::renderer::Renderable,
-    math::vec::*,
+    math::vec::{random_color, Magnitude, Vector2},
 };
+
+use super::behaviour::traits::{BorderBehaviour, FlockBehaviour, SeeBehaviour};
+use crate::math::vec::V2f32;
+pub trait Updatable {
+    fn update(&mut self);
+}
+
 static mut BOID_ID: u32 = 0;
 
 #[derive(PartialEq, Copy, Clone)]
 pub struct Boid {
-    pub position: Vector2<f32>,
-    pub velocity: Vector2<f32>,
-    pub acceleration: Vector2<f32>,
+    pub position: V2f32,
+    pub velocity: V2f32,
+    pub acceleration: V2f32,
     color: Color,
     size: i16,
-    id: u32,
+    pub id: u32,
 }
 impl Boid {
     pub fn new(
-        position: Vector2<f32>,
-        velocity: Vector2<f32>,
-        acceleration: Vector2<f32>,
+        position: V2f32,
+        velocity: V2f32,
+        acceleration: V2f32,
         color: Color,
         size: i16,
     ) -> Self {
@@ -41,7 +52,17 @@ impl Boid {
         }
     }
 
-    pub fn draw_boid(&self, canvas: &WindowCanvas) -> Result<(), String> {
+    pub fn draw_boid(&self, canvas: &mut WindowCanvas) -> Result<(), String> {
+        canvas.set_draw_color(self.color.as_rgba());
+        if unsafe { DRAW_VIEW } {
+            let r = Rect::new(
+                (self.position.x as i32 - (VIEW_DISTANCE / 2.0) as i32) as i32,
+                (self.position.y as i32 - (VIEW_DISTANCE / 2.0) as i32) as i32,
+                (VIEW_DISTANCE) as u32,
+                (VIEW_DISTANCE) as u32,
+            );
+            canvas.draw_rect(r)?;
+        }
         canvas.filled_circle(
             self.position.x as i16,
             self.position.y as i16,
@@ -49,46 +70,6 @@ impl Boid {
             self.color.as_rgba(),
         )?;
         Ok(())
-    }
-    pub fn update(&mut self) {
-        
-        if self.position.x as u32 > (SCREEN_SIZE.x - BOID_SIZE as u32) {
-            //self.position.x = 0.0//reflect(Vector2::new(0.0,-1.0));
-            self.velocity = self.velocity.reflect(Vector2::new(-1.0, 0.0));
-        } else if self.position.x <= BOID_SIZE as f32 {
-            self.velocity = self.velocity.reflect(Vector2::new(1.0, 0.0));
-        } else if self.position.y >= (SCREEN_SIZE.y - BOID_SIZE as u32) as f32 {
-            self.velocity = self.velocity.reflect(Vector2::new(0.0, 1.0));
-        } else if self.position.y <= BOID_SIZE as f32 {
-            self.velocity = self.velocity.reflect(Vector2::new(0.0, -1.0));
-        }
-        self.position = self.velocity + self.position;
-       // self.velocity = self.velocity + self.acceleration;
-        println!("pos : {}, vel : {}, acc : {} | id = {}",self.position,self.velocity,self.acceleration, self.id);
-    }
-    pub fn align(&mut self, other: &Vec<Boid>) {
-        let mut avg: Vector2<f32> = Vector2::zero();
-        let mut amount = 0;
-        for other_boid in other {
-            if self.id== other_boid.id{
-                break;
-            }
-            let c = Vector2::distance(self.position, other_boid.position);
-
-            if c.x.abs() < VIEW_DISTANCE && c.y.abs() < VIEW_DISTANCE {
-                avg = avg + other_boid.velocity;
-                amount += 1;
-            }
-        }
-
-        if amount > 0 {
-            let outcome = self.velocity + avg;
-            let ret = outcome / amount as f32;
-            self.velocity = self.velocity + ret;
-            const FACTOR: f32 = 0.05;
-            self.velocity = self.velocity * FACTOR;
-            println!("{}  velocity changed = ", self.velocity);
-        }
     }
 }
 
@@ -100,37 +81,28 @@ impl BoidManager {
         Self { boids: Vec::new() }
     }
 
-    pub fn spawn_boid(&mut self, amount: i16) {
-        /*
-        let mut rng = rand::thread_rng();
-        let x = Uniform::from(BOID_SIZE as u32..BOARD_SIZE.x);
-        let y = Uniform::from(BOID_SIZE as u32..BOARD_SIZE.y);
-        */
-        for _i in 0..amount {
-            /*
-            let pos: Vector2<f32> = Vector2 {
-                x: x.sample(&mut rng) as f32,
-                y: y.sample(&mut rng) as f32,
-            };*/
+    pub fn add_boid(&mut self, amount: i16) {
+        for _ in 0..amount {
+            let mut c = Vector2::random(-1.0, 1.0); //
+            c.set_magnitude(2.0);
             self.boids.push(Boid::new(
-                Vector2::new((SCREEN_SIZE.x / 2) as f32, (SCREEN_SIZE.y / 2) as f32),
-                random(-10.0, 10.0),
+                Vector2::random_from_vec(
+                    Vector2::new(0.0, SCREEN_SIZE.x as f32),
+                    Vector2::new(0.0, SCREEN_SIZE.y as f32),
+                ),
+                c,
                 Vector2::new(0.01, 0.01),
                 random_color(),
                 BOID_SIZE,
             ));
         }
     }
+    pub fn spawn_boid(&mut self, amount: i16) {
+        self.boids = Vec::with_capacity(amount as usize);
+        self.add_boid(amount);
+    }
     pub fn remove_all_boids(&mut self) {
         self.boids = Vec::new();
-    }
-    pub fn update_all(&mut self) {
-        for i in 0..(self.boids).len() {
-            let mut b = self.boids[i];
-            b.update();
-            b.align(&self.boids);
-            self.boids[i] = b;
-        }
     }
 }
 
@@ -141,8 +113,38 @@ impl Default for BoidManager {
 }
 
 impl Renderable for Boid {
-    fn render(&mut self, canvas: &WindowCanvas) -> Result<(), String> {
-        self.draw_boid(&canvas)?;
+    fn render(&mut self, canvas: &mut WindowCanvas) -> Result<(), String> {
+        self.draw_boid(canvas)?;
         Ok(())
+    }
+}
+impl Updatable for BoidManager {
+    fn update(&mut self) {
+        for i in 0..(self.boids).len() {
+            let mut b = self.boids[i];
+            let other_visible_boids = b.get_other_visible(&self.boids);
+
+            unsafe {
+                if BEHAVIOUR_ENABLED.contains(BehaviourEnabled::COHESION) {
+                    b.acceleration = b.cohesion(&other_visible_boids) + b.acceleration;
+                }
+                if BEHAVIOUR_ENABLED.contains(BehaviourEnabled::SEPERATE) {
+                    b.acceleration = b.seperate(&other_visible_boids) + b.acceleration;
+                }
+                if BEHAVIOUR_ENABLED.contains(BehaviourEnabled::ALLIGN) {
+                    b.acceleration = b.align(&other_visible_boids) + b.acceleration;
+                }
+            }
+            b.update();
+            b.acceleration = V2f32::zero();
+            self.boids[i] = b;
+        }
+    }
+}
+impl Updatable for Boid {
+    fn update(&mut self) {
+        self.border(unsafe { &BORDER_BEHAVIOUR });
+        self.position = self.velocity + self.position;
+        self.velocity = self.velocity + self.acceleration * MAX_BOID_FORCE;
     }
 }

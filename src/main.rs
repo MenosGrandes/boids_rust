@@ -3,15 +3,15 @@ pub mod graphics;
 pub mod logic;
 pub mod math;
 
-extern crate sdl2;
-#[macro_use]
 extern crate approx;
+extern crate sdl2;
 
 use std::time::Duration;
 
-use constants::SCREEN_SIZE;
+use constants::{BehaviourEnabled, BEHAVIOUR_ENABLED, BORDER_BEHAVIOUR, DRAW_VIEW, SCREEN_SIZE};
 use graphics::renderer::{GfxSubsystem, RendererManager};
-use logic::boid::BoidManager;
+use logic::behaviour::traits::BorderBehaviourE;
+use logic::boid::{BoidManager, Updatable};
 use sdl2::event::Event;
 use sdl2::gfx::framerate::FPSManager;
 use sdl2::keyboard::Keycode;
@@ -31,7 +31,7 @@ pub fn main() -> Result<(), String> {
     let mut fps_manager: FPSManager = FPSManager::new();
     fps_manager.set_framerate(120)?;
     let mut boid_manager = BoidManager::new();
-    boid_manager.spawn_boid(2);
+    boid_manager.spawn_boid(100);
     let mut event_pump = gss.sdl_context.event_pump()?;
     let mut renderer = RendererManager::new(window, gss)?;
     'running: loop {
@@ -43,25 +43,49 @@ pub fn main() -> Result<(), String> {
                     ..
                 } => match keycode {
                     Keycode::W => {
-                        boid_manager.spawn_boid(1);
+                        boid_manager.add_boid(1);
                     }
-                    Keycode::R => {
+                    Keycode::Q => {
                         boid_manager.remove_all_boids();
                         boid_manager.spawn_boid(1);
                     }
+                    Keycode::D => {
+                        unsafe { DRAW_VIEW = !DRAW_VIEW };
+                    }
+                    Keycode::R => unsafe {
+                        BORDER_BEHAVIOUR = match BORDER_BEHAVIOUR {
+                            BorderBehaviourE::GoThrough => BorderBehaviourE::Reflect,
+                            BorderBehaviourE::Reflect => BorderBehaviourE::GoThrough,
+                        };
+                    },
+                    Keycode::Num1 => unsafe {
+                            BEHAVIOUR_ENABLED ^= BehaviourEnabled::COHESION;
+                    },
+                    Keycode::Num2 => unsafe {
+                            BEHAVIOUR_ENABLED ^=  BehaviourEnabled::ALLIGN;
+                    },
+                    Keycode::Num3 => unsafe {
+                            BEHAVIOUR_ENABLED ^=  BehaviourEnabled::SEPERATE;
+                    },
                     Keycode::Escape => break 'running,
                     _ => {}
                 },
                 _ => {}
             }
         }
-        renderer.draw_string(boid_manager.boids[0].position.to_string())?;
+        unsafe {
+            if !BEHAVIOUR_ENABLED.is_empty() {
+                renderer.draw_string(BEHAVIOUR_ENABLED.to_string())?;
+            } else {
+                renderer.draw_string((&"NONE").to_string())?;
+            }
+        }
         renderer.draw(&boid_manager.boids)?;
         ::std::thread::sleep(Duration::new(
             0,
             1_000_000_000u32 / fps_manager.get_framerate() as u32,
         ));
-        boid_manager.update_all();
+        boid_manager.update();
 
         // The rest of the game loop goes here...
     }

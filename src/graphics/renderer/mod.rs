@@ -12,7 +12,7 @@ macro_rules! rect(
 );
 
 pub trait Renderable {
-    fn render(&mut self, canvas: &WindowCanvas) -> Result<(), String>;
+    fn render(&mut self, canvas: &mut WindowCanvas) -> Result<(), String>;
 }
 
 pub struct Writer<'ttf, 'b> {
@@ -54,11 +54,12 @@ impl<'ttf, 'b> RendererManager<'ttf, 'b> {
         let canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
         Ok(RendererManager { canvas, gfx })
     }
-    pub fn draw(&mut self, boids: &Vec<Boid>) -> Result<(), String> {
+    pub fn draw(&mut self, boids: &[Boid]) -> Result<(), String> {
         self.canvas.set_draw_color(Color::BLACK);
         self.canvas.clear();
         for b in boids {
-            b.draw_boid(&self.canvas)?;
+            b.draw_boid(&mut self.canvas)?;
+            // println!("{}",b.id);
         }
         self.canvas.present();
 
@@ -81,7 +82,7 @@ impl<'ttf, 'b> RendererManager<'ttf, 'b> {
             .map_err(|e| e.to_string())?;
         //let TextureQuery { width, height, .. } = texture.query();
 
-        let target = self.get_upper_rect(64, 64);
+        let target = self.get_upper_rect(800, 155);
 
         self.canvas.copy(&texture, None, Some(target))?;
         self.canvas.present();
