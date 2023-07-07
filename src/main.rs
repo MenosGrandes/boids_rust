@@ -73,13 +73,6 @@ pub fn main() -> Result<(), String> {
                 _ => {}
             }
         }
-        unsafe {
-            if !BEHAVIOUR_ENABLED.is_empty() {
-                renderer.draw_string(BEHAVIOUR_ENABLED.to_string())?;
-            } else {
-                renderer.draw_string((&"NONE").to_string())?;
-            }
-        }
         renderer.draw(&boid_manager.boids)?;
         ::std::thread::sleep(Duration::new(
             0,

@@ -6,15 +6,15 @@ use crate::{
 };
 
 pub const SCREEN_SIZE: V2u32 = Vector2::new(800, 600);
-pub const BOID_SIZE: i16 = 5;
+pub const BOID_SIZE: i16 = 1;
 pub const VIEW_DISTANCE: f32 = 50.0;
 pub static mut DRAW_VIEW: bool = false;
 pub static mut BORDER_BEHAVIOUR: BorderBehaviourE = BorderBehaviourE::Reflect;
-pub const MAX_BOID_SPEED: f32 = 3.0;
+pub const MAX_BOID_SPEED: f32 = 5.0;
 pub const MAX_BOID_FORCE: f32 = 0.2;
 
 pub const ALLIGN_FACTOR: f32 = 0.5;
-pub const COHESION_FACTOR: f32 = 0.5;
+pub const COHESION_FACTOR: f32 = 0.2;
 pub const SEPERATE_FACTOR: f32 = 0.5;
 
 use bitflags::bitflags;

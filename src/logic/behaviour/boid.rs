@@ -29,26 +29,25 @@ impl FlockBehaviour for Boid {
                 other_boids.iter().map(|boid| boid.velocity).sum::<V2f32>()
                     / (other_boids.len() as f32);
 
-            avarage_velocity = avarage_velocity / (other_boids.len()) as f32;
             avarage_velocity.set_magnitude(MAX_BOID_SPEED);
             avarage_velocity = avarage_velocity - self.velocity;
-            avarage_velocity = avarage_velocity * ALLIGN_FACTOR;
+            avarage_velocity *= ALLIGN_FACTOR;
             return avarage_velocity;
         }
         V2f32::zero()
     }
 
+    //MenosGrandes to lookup
     fn cohesion(&mut self, other_boids: &[Boid]) -> V2f32 {
         if other_boids.len() > 0 {
             let mut avarage_position: V2f32 =
                 other_boids.iter().map(|boid| boid.position).sum::<V2f32>()
                     / (other_boids.len() as f32);
 
-            avarage_position = avarage_position / (other_boids.len() as f32);
-            avarage_position = avarage_position - self.position;
+            avarage_position -= self.position;
             avarage_position.set_magnitude(MAX_BOID_SPEED);
-            avarage_position = avarage_position - self.velocity;
-            avarage_position = avarage_position * COHESION_FACTOR;
+            avarage_position -= self.velocity ;
+            avarage_position *= COHESION_FACTOR;
 
             return avarage_position;
         }
@@ -60,16 +59,15 @@ impl FlockBehaviour for Boid {
             let mut avarage_position: V2f32 = other_boids
                 .iter()
                 .map(|boid| {
-                    (boid.position - self.position)
-                        / Vector2::distance(self.position, boid.position)
+                    (self.position - boid.position)
+                        / (Vector2::distance(self.position, boid.position) *Vector2::distance(self.position, boid.position))
                 })
                 .sum::<V2f32>()
                 / (other_boids.len() as f32);
 
-            avarage_position = avarage_position / (other_boids.len() as f32);
             avarage_position.set_magnitude(MAX_BOID_SPEED);
-            avarage_position = avarage_position - self.velocity;
-            avarage_position = avarage_position * SEPERATE_FACTOR;
+            avarage_position -= self.velocity;
+            avarage_position *= SEPERATE_FACTOR;
 
             return avarage_position;
         }

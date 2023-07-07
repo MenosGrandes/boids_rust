@@ -69,6 +69,21 @@ impl Boid {
             self.size,
             self.color.as_rgba(),
         )?;
+        /*
+         *
+        let x1 = ((self.position.x + self.size as f32 ) as f64 * ((60.0 * 2.0 * std::f64::consts::PI/3.0) as f64 ).cos()) as i16;
+        let y1 = ((self.position.y + self.size as f32 ) as f64 * ((60.0 * 2.0 * std::f64::consts::PI/3.0) as f64 ).sin()) as i16;
+
+        let x2 = ((self.position.x + self.size as f32 ) as f64 * ((60.0 + 1.0 * 2.0 * std::f64::consts::PI/3.0) as f64 ).cos()) as i16;
+        let y2 = ((self.position.y + self.size as f32 ) as f64 * ((60.0 + 1.0* 2.0 * std::f64::consts::PI/3.0) as f64 ).sin()) as i16;
+
+        let x3 =( (self.position.x + self.size as f32 ) as f64 * ((60.0 +2.0 * 2.0 * std::f64::consts::PI/3.0) as f64 ).cos()) as i16;
+        let y3 =( (self.position.y + self.size as f32 ) as f64 * ((60.0 +2.0* 2.0 * std::f64::consts::PI/3.0) as f64 ).sin()) as i16;
+        canvas.trigon(
+            x1,y1,x2,y2,x3,y3,
+            self.color.as_rgba()
+        )?;
+        */
         Ok(())
     }
 }
