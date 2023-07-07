@@ -50,7 +50,15 @@ pub fn main() -> Result<(), String> {
                         boid_manager.spawn_boid(1);
                     }
                     Keycode::D => {
-                        unsafe { DRAW_VIEW = !DRAW_VIEW };
+
+                        DRAW_VIEW.with(|value: &std::cell::RefCell<bool>| {
+                            let v = match *value.borrow()
+                            {
+                                true => false,
+                                false => true,
+                            };
+                            *value.borrow_mut() = v;
+                        });
                     }
                     Keycode::R => unsafe {
                         BORDER_BEHAVIOUR = match BORDER_BEHAVIOUR {

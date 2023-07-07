@@ -6,9 +6,16 @@ use crate::{
 };
 
 pub const SCREEN_SIZE: V2u32 = Vector2::new(800, 600);
-pub const BOID_SIZE: i16 = 1;
-pub const VIEW_DISTANCE: f32 = 50.0;
-pub static mut DRAW_VIEW: bool = false;
+pub const BOID_SIZE: i16 = 4;
+pub const VIEW_DISTANCE: f32 = BOID_SIZE as f32 * 10.0 as f32;
+
+
+use std::cell::RefCell;
+thread_local!(pub static DRAW_VIEW: RefCell<bool> = RefCell::new(false));
+
+
+
+//pub static mut DRAW_VIEW: bool = false;
 pub static mut BORDER_BEHAVIOUR: BorderBehaviourE = BorderBehaviourE::Reflect;
 pub const MAX_BOID_SPEED: f32 = 5.0;
 pub const MAX_BOID_FORCE: f32 = 0.2;

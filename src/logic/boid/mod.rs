@@ -54,15 +54,18 @@ impl Boid {
 
     pub fn draw_boid(&self, canvas: &mut WindowCanvas) -> Result<(), String> {
         canvas.set_draw_color(self.color.as_rgba());
-        if unsafe { DRAW_VIEW } {
+        DRAW_VIEW.with(|value: &std::cell::RefCell<bool>| {
+            if *value.borrow()
+            {
             let r = Rect::new(
                 (self.position.x as i32 - (VIEW_DISTANCE / 2.0) as i32) as i32,
                 (self.position.y as i32 - (VIEW_DISTANCE / 2.0) as i32) as i32,
                 (VIEW_DISTANCE) as u32,
                 (VIEW_DISTANCE) as u32,
             );
-            canvas.draw_rect(r)?;
-        }
+           let _ = canvas.draw_rect(r);
+            }
+        });
         canvas.filled_circle(
             self.position.x as i16,
             self.position.y as i16,
