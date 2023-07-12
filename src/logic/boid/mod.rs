@@ -55,15 +55,14 @@ impl Boid {
     pub fn draw_boid(&self, canvas: &mut WindowCanvas) -> Result<(), String> {
         canvas.set_draw_color(self.color.as_rgba());
         DRAW_VIEW.with(|value: &std::cell::RefCell<bool>| {
-            if *value.borrow()
-            {
-            let r = Rect::new(
-                (self.position.x as i32 - (VIEW_DISTANCE / 2.0) as i32) as i32,
-                (self.position.y as i32 - (VIEW_DISTANCE / 2.0) as i32) as i32,
-                (VIEW_DISTANCE) as u32,
-                (VIEW_DISTANCE) as u32,
-            );
-           let _ = canvas.draw_rect(r);
+            if *value.borrow() {
+                let r = Rect::new(
+                    (self.position.x as i32 - (VIEW_DISTANCE / 2.0) as i32) as i32,
+                    (self.position.y as i32 - (VIEW_DISTANCE / 2.0) as i32) as i32,
+                    (VIEW_DISTANCE) as u32,
+                    (VIEW_DISTANCE) as u32,
+                );
+                let _ = canvas.draw_rect(r);
             }
         });
         canvas.filled_circle(
@@ -144,13 +143,13 @@ impl Updatable for BoidManager {
 
             unsafe {
                 if BEHAVIOUR_ENABLED.contains(BehaviourEnabled::COHESION) {
-                    b.acceleration = b.cohesion(&other_visible_boids) + b.acceleration;
-                }
-                if BEHAVIOUR_ENABLED.contains(BehaviourEnabled::SEPERATE) {
-                    b.acceleration = b.seperate(&other_visible_boids) + b.acceleration;
+                    b.acceleration += b.cohesion(&other_visible_boids);
                 }
                 if BEHAVIOUR_ENABLED.contains(BehaviourEnabled::ALLIGN) {
-                    b.acceleration = b.align(&other_visible_boids) + b.acceleration;
+                    b.acceleration += b.align(&other_visible_boids);
+                }
+                if BEHAVIOUR_ENABLED.contains(BehaviourEnabled::SEPERATE) {
+                    b.acceleration += b.seperate(&other_visible_boids);
                 }
             }
             b.update();
@@ -161,8 +160,8 @@ impl Updatable for BoidManager {
 }
 impl Updatable for Boid {
     fn update(&mut self) {
-        self.border(unsafe { &BORDER_BEHAVIOUR });
-        self.position = self.velocity + self.position;
-        self.velocity = self.velocity + self.acceleration * MAX_BOID_FORCE;
+        BORDER_BEHAVIOUR.with(|beh| self.border(&beh.borrow()));
+        self.velocity += self.acceleration * MAX_BOID_FORCE;
+        self.position += self.velocity;
     }
 }

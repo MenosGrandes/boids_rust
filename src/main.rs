@@ -31,7 +31,7 @@ pub fn main() -> Result<(), String> {
     let mut fps_manager: FPSManager = FPSManager::new();
     fps_manager.set_framerate(120)?;
     let mut boid_manager = BoidManager::new();
-    boid_manager.spawn_boid(100);
+    boid_manager.spawn_boid(1000);
     let mut event_pump = gss.sdl_context.event_pump()?;
     let mut renderer = RendererManager::new(window, gss)?;
     'running: loop {
@@ -50,30 +50,31 @@ pub fn main() -> Result<(), String> {
                         boid_manager.spawn_boid(1);
                     }
                     Keycode::D => {
-
                         DRAW_VIEW.with(|value: &std::cell::RefCell<bool>| {
-                            let v = match *value.borrow()
-                            {
+                            let v = match *value.borrow() {
                                 true => false,
                                 false => true,
                             };
                             *value.borrow_mut() = v;
                         });
                     }
-                    Keycode::R => unsafe {
-                        BORDER_BEHAVIOUR = match BORDER_BEHAVIOUR {
-                            BorderBehaviourE::GoThrough => BorderBehaviourE::Reflect,
-                            BorderBehaviourE::Reflect => BorderBehaviourE::GoThrough,
-                        };
-                    },
+                    Keycode::R => {
+                        BORDER_BEHAVIOUR.with(|value: &std::cell::RefCell<BorderBehaviourE>| {
+                            let v = match *value.borrow() {
+                                BorderBehaviourE::GoThrough => BorderBehaviourE::Reflect,
+                                BorderBehaviourE::Reflect => BorderBehaviourE::GoThrough,
+                            };
+                            *value.borrow_mut() = v;
+                        });
+                    }
                     Keycode::Num1 => unsafe {
-                            BEHAVIOUR_ENABLED ^= BehaviourEnabled::COHESION;
+                        BEHAVIOUR_ENABLED ^= BehaviourEnabled::COHESION;
                     },
                     Keycode::Num2 => unsafe {
-                            BEHAVIOUR_ENABLED ^=  BehaviourEnabled::ALLIGN;
+                        BEHAVIOUR_ENABLED ^= BehaviourEnabled::ALLIGN;
                     },
                     Keycode::Num3 => unsafe {
-                            BEHAVIOUR_ENABLED ^=  BehaviourEnabled::SEPERATE;
+                        BEHAVIOUR_ENABLED ^= BehaviourEnabled::SEPERATE;
                     },
                     Keycode::Escape => break 'running,
                     _ => {}
@@ -88,7 +89,6 @@ pub fn main() -> Result<(), String> {
         ));
         boid_manager.update();
 
-        // The rest of the game loop goes here...
     }
 
     Ok(())

@@ -2,7 +2,7 @@ use crate::constants::{BEHAVIOUR_ENABLED, SCREEN_SIZE};
 use crate::logic::boid::Boid;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
-use sdl2::render::{WindowCanvas, TextureQuery};
+use sdl2::render::{TextureQuery, WindowCanvas};
 use sdl2::ttf::{self, FontStyle};
 use sdl2::video::Window;
 
@@ -34,7 +34,7 @@ pub struct GfxSubsystem<'ttf, 'b> {
 impl<'ttf, 'b> GfxSubsystem<'ttf, 'b> {
     pub fn new(ttf_context: &'ttf ttf::Sdl2TtfContext) -> GfxSubsystem<'ttf, 'b> {
         let sdl_context = sdl2::init().unwrap();
-        let font = ttf_context.load_font("font.ttf",128).unwrap();
+        let font = ttf_context.load_font("font.ttf", 128).unwrap();
         let mut writer = Writer::new(font);
         writer.font.set_style(FontStyle::BOLD);
         GfxSubsystem {
@@ -88,35 +88,41 @@ impl<'ttf, 'b> RendererManager<'ttf, 'b> {
             .map_err(|e| e.to_string())?;
         let TextureQuery { width, height, .. } = texture.query();
 
-            let padding = 64;
-    let target = self.get_centered_rect(
-        width,
-        height,
-        SCREEN_SIZE.x- padding,
-        SCREEN_SIZE.y- padding,
-    );
+        let padding = 64;
+        let target = self.get_centered_rect(
+            width,
+            height,
+            SCREEN_SIZE.x - padding,
+            SCREEN_SIZE.y - padding,
+        );
 
         self.canvas.copy(&texture, None, Some(target))?;
         Ok(())
     }
-    fn get_centered_rect(&self, rect_width: u32, rect_height: u32, cons_width: u32, cons_height: u32) -> Rect {
-    let wr = rect_width as f32 / cons_width as f32;
-    let hr = rect_height as f32 / cons_height as f32;
+    fn get_centered_rect(
+        &self,
+        rect_width: u32,
+        rect_height: u32,
+        cons_width: u32,
+        cons_height: u32,
+    ) -> Rect {
+        let wr = rect_width as f32 / cons_width as f32;
+        let hr = rect_height as f32 / cons_height as f32;
 
-    let (w, h) = if wr > 1f32 || hr > 1f32 {
-        if wr > hr {
-            let h = (rect_height as f32 / wr) as i32;
-            (cons_width as i32, h)
+        let (w, h) = if wr > 1f32 || hr > 1f32 {
+            if wr > hr {
+                let h = (rect_height as f32 / wr) as i32;
+                (cons_width as i32, h)
+            } else {
+                let w = (rect_width as f32 / hr) as i32;
+                (w, cons_height as i32)
+            }
         } else {
-            let w = (rect_width as f32 / hr) as i32;
-            (w, cons_height as i32)
-        }
-    } else {
-        (rect_width as i32, rect_height as i32)
-    };
+            (rect_width as i32, rect_height as i32)
+        };
 
-    let cx = 0;//(SCREEN_SIZE.x as i32 - w) / 2;
-    let cy = 0;//(SCREEN_SIZE.y as i32 - h) / 2;
-    rect!(cx, cy, w, h)
-}
+        let cx = 0; //(SCREEN_SIZE.x as i32 - w) / 2;
+        let cy = 0; //(SCREEN_SIZE.y as i32 - h) / 2;
+        rect!(cx, cy, w, h)
+    }
 }

@@ -1,9 +1,16 @@
 use num::integer::Roots;
 
 use num::Zero;
-use rand::{distributions::{uniform::SampleUniform, Distribution, Uniform}, Rng};
+use rand::{
+    distributions::{uniform::SampleUniform, Distribution, Uniform},
+    Rng,
+};
 use sdl2::pixels::Color;
-use std::{fmt, iter::Sum, ops::{Div, DivAssign, Sub, Add, Mul, MulAssign, SubAssign}};
+use std::{
+    fmt,
+    iter::Sum,
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign},
+};
 
 use num::NumCast;
 pub trait DotProduct<T = Self> {
@@ -33,7 +40,14 @@ pub struct Vector2<T> {
 }
 impl<T> Vector2<T>
 where
-    T: Default + Add + Mul + Sub + rand::distributions::uniform::SampleUniform + PartialOrd + Copy + DivAssign,
+    T: Default
+        + Add
+        + Mul
+        + Sub
+        + rand::distributions::uniform::SampleUniform
+        + PartialOrd
+        + Copy
+        + DivAssign,
 {
     pub const fn new(x: T, y: T) -> Self {
         Self { x, y }
@@ -184,22 +198,30 @@ macro_rules! vect_impl {
         where
             $t: Mul<Output = $t> + Default + Add + Copy + Sub + SampleUniform + PartialOrd,
         {
-
-            fn mul_assign(&mut self, rhs: $t)
-            {
-                self.x *=rhs;
-                self.y *=rhs;
-
+            fn mul_assign(&mut self, rhs: $t) {
+                self.x *= rhs;
+                self.y *= rhs;
             }
         }
         impl MulAssign<Vector2<$t>> for Vector2<$t>
         where
             $t: Mul<Output = $t> + Default + Add + Sub + SampleUniform + PartialOrd + Copy,
         {
-            fn mul_assign(&mut self, rhs: Vector2<$t>)
-            {
-                self.x *=rhs.x;
-                self.y *=rhs.y;
+            fn mul_assign(&mut self, rhs: Vector2<$t>) {
+                self.x *= rhs.x;
+                self.y *= rhs.y;
+            }
+        }
+        //END
+        //AddAssign
+
+        impl AddAssign<Vector2<$t>> for Vector2<$t>
+        where
+            $t: Add<Output = $t> + Default + Mul + Sub + SampleUniform + PartialOrd + Copy,
+        {
+            fn add_assign(&mut self, rhs: Vector2<$t>) {
+                self.x += rhs.x;
+                self.y += rhs.y;
             }
         }
         //END
@@ -263,8 +285,8 @@ macro_rules! vect_impl {
                 + Copy,
         {
             fn div_assign(&mut self, rhs: Vector2<$t>) {
-                self.x/= rhs.x;
-                self.y/= rhs.y;
+                self.x /= rhs.x;
+                self.y /= rhs.y;
             }
         }
         impl DivAssign<$t> for Vector2<$t>
@@ -278,14 +300,12 @@ macro_rules! vect_impl {
                 + SampleUniform
                 + PartialOrd,
         {
-
             fn div_assign(&mut self, rhs: $t) {
-                self.x/= rhs;
-                self.y/= rhs;
+                self.x /= rhs;
+                self.y /= rhs;
             }
         }
         //END
-
 
         impl fmt::Display for Vector2<$t>
         where
