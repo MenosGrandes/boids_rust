@@ -23,8 +23,12 @@ pub trait Reflect<T> {
 pub trait Normalize<T> {
     fn normalize(&mut self);
 }
-pub trait Distance<T> {
+pub trait Distance<T = Self> {
     fn distance(first: Self, other: Self) -> Self;
+}
+pub trait InBetween<T = Self> {
+    type Scalar;
+    fn in_between(vector: Self, scalar: Self::Scalar) -> bool;
 }
 
 pub trait Magnitude<T> {
@@ -396,6 +400,17 @@ macro_rules! magnitude_impl_float {
     };
 }
 
+macro_rules! in_between_impl {
+    ($t:ty) => {
+        impl InBetween<$t> for Vector2<$t> {
+            type Scalar = $t;
+            #[inline]
+            fn in_between(vector: Self, scalar: Self::Scalar) -> bool {
+                vector.x.abs() < scalar && vector.y.abs() < scalar
+            }
+        }
+    };
+}
 magnitude_impl_float!(f32);
 magnitude_impl_float!(f64);
 magnitude_impl_int!(u8);
@@ -404,6 +419,8 @@ magnitude_impl_int!(u32);
 magnitude_impl_int!(i32);
 magnitude_impl_int!(i8);
 magnitude_impl_int!(i16);
+in_between_impl!(f32);
+in_between_impl!(f64);
 vect_impl!(f32);
 vect_impl!(f64);
 vect_impl!(u8);

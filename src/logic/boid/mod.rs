@@ -14,7 +14,9 @@ use crate::{
     math::vec::{random_color, Magnitude, Vector2},
 };
 
-use super::behaviour::traits::{BorderBehaviour, FlockBehaviour, SeeBehaviour};
+use super::behaviour::traits::{
+    AlignBehaviour, Behaviour, BorderBehaviour, CohesionBehaviour, SeeBehaviour, SeperateBehaviour,
+};
 use crate::math::vec::V2f32;
 pub trait Updatable {
     fn update(&mut self);
@@ -92,10 +94,18 @@ impl Boid {
 
 pub struct BoidManager {
     pub boids: Vec<Boid>,
+    pub behaviours: Vec<Box<dyn Behaviour>>,
 }
 impl BoidManager {
     pub fn new() -> Self {
-        Self { boids: Vec::new() }
+        Self {
+            boids: Vec::new(),
+            behaviours: vec![
+                Box::new(AlignBehaviour {}),
+                Box::new(SeperateBehaviour {}),
+                Box::new(CohesionBehaviour {}),
+            ],
+        }
     }
 
     pub fn add_boid(&mut self, amount: i16) {
@@ -141,15 +151,9 @@ impl Updatable for BoidManager {
             let mut b = self.boids[i];
             let other_visible_boids = b.get_other_visible(&self.boids);
 
-            unsafe {
-                if BEHAVIOUR_ENABLED.contains(BehaviourEnabled::COHESION) {
-                    b.acceleration += b.cohesion(&other_visible_boids);
-                }
-                if BEHAVIOUR_ENABLED.contains(BehaviourEnabled::ALLIGN) {
-                    b.acceleration += b.align(&other_visible_boids);
-                }
-                if BEHAVIOUR_ENABLED.contains(BehaviourEnabled::SEPERATE) {
-                    b.acceleration += b.seperate(&other_visible_boids);
+            if other_visible_boids.len() > 0 {
+                for behaviour in &self.behaviours {
+                    b.acceleration += behaviour.calculate(&b, &other_visible_boids);
                 }
             }
             b.update();

@@ -4,6 +4,7 @@ pub mod logic;
 pub mod math;
 
 extern crate approx;
+extern crate crossbeam;
 extern crate sdl2;
 
 use std::time::Duration;
@@ -88,7 +89,6 @@ pub fn main() -> Result<(), String> {
             1_000_000_000u32 / fps_manager.get_framerate() as u32,
         ));
         boid_manager.update();
-
     }
 
     Ok(())

@@ -15,12 +15,12 @@ thread_local!(pub static DRAW_VIEW: RefCell<bool> = RefCell::new(false));
 thread_local!(pub static BORDER_BEHAVIOUR: RefCell<BorderBehaviourE> = RefCell::new(BorderBehaviourE::Reflect));
 
 //pub static mut BORDER_BEHAVIOUR: BorderBehaviourE = BorderBehaviourE::Reflect;
-pub const MAX_BOID_SPEED: f32 = 5.0;
+pub const MAX_BOID_SPEED: f32 = 15.0;
 pub const MAX_BOID_FORCE: f32 = 0.2;
 
 pub const ALLIGN_FACTOR: f32 = 0.3;
 pub const COHESION_FACTOR: f32 = 0.3;
-pub const SEPERATE_FACTOR: f32 = 0.3;
+pub const SEPERATE_FACTOR: f32 = 0.39;
 
 use bitflags::bitflags;
 
@@ -31,10 +31,11 @@ bitflags! {
         const ALLIGN = 0b00000001;
         const COHESION = 0b00000010;
         const SEPERATE = 0b00000100;
+        const ALL_ENABLED = 0b00000111;
     }
 }
 
-pub static mut BEHAVIOUR_ENABLED: BehaviourEnabled = BehaviourEnabled::ALL_DISABLED;
+pub static mut BEHAVIOUR_ENABLED: BehaviourEnabled = BehaviourEnabled::ALL_ENABLED;
 
 impl fmt::Display for BehaviourEnabled {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

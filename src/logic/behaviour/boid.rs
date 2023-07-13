@@ -4,7 +4,7 @@ use crate::{
     math::vec::*,
 };
 
-use super::traits::{BorderBehaviour, BorderBehaviourE, FlockBehaviour};
+use super::traits::{BorderBehaviour, BorderBehaviourE};
 
 impl SeeBehaviour for Boid {
     fn get_other_visible(self, other: &[Boid]) -> Vec<Boid> {
@@ -13,66 +13,12 @@ impl SeeBehaviour for Boid {
             if self.id == other_boid.id {
                 break;
             }
-            let c = Vector2::distance(self.position, other_boid.position);
-
-            if c.x.abs() < VIEW_DISTANCE && c.y.abs() < VIEW_DISTANCE {
+            let distance = Vector2::distance(self.position, other_boid.position);
+            if Vector2::in_between(distance, VIEW_DISTANCE) {
                 other_visible_boids.push(*other_boid);
             }
         }
         other_visible_boids
-    }
-}
-impl FlockBehaviour for Boid {
-    fn align(&self, other_boids: &[Boid]) -> V2f32 {
-        if other_boids.len() > 0 {
-            let mut avarage_velocity: V2f32 =
-                other_boids.iter().map(|boid| boid.velocity).sum::<V2f32>()
-                    / (other_boids.len() as f32);
-
-            avarage_velocity.set_magnitude(MAX_BOID_SPEED);
-            avarage_velocity -= self.velocity;
-            avarage_velocity *= ALLIGN_FACTOR;
-            return avarage_velocity;
-        }
-        V2f32::zero()
-    }
-
-    //MenosGrandes to lookup
-    fn cohesion(&self, other_boids: &[Boid]) -> V2f32 {
-        if other_boids.len() > 0 {
-            let mut avarage_position: V2f32 =
-                other_boids.iter().map(|boid| boid.position).sum::<V2f32>()
-                    / (other_boids.len() as f32);
-
-            avarage_position -= self.position;
-            avarage_position.set_magnitude(MAX_BOID_SPEED);
-            avarage_position -= self.velocity;
-            avarage_position *= COHESION_FACTOR;
-
-            return avarage_position;
-        }
-        V2f32::zero()
-    }
-
-    fn seperate(&self, other_boids: &[Boid]) -> V2f32 {
-        if other_boids.len() > 0 {
-            let mut avarage_position: V2f32 = other_boids
-                .iter()
-                .map(|boid| {
-                    (self.position - boid.position)
-                        / (Vector2::distance(self.position, boid.position)
-                            * Vector2::distance(self.position, boid.position))
-                })
-                .sum::<V2f32>()
-                / (other_boids.len() as f32);
-
-            avarage_position.set_magnitude(MAX_BOID_SPEED);
-            avarage_position -= self.velocity;
-            avarage_position *= SEPERATE_FACTOR;
-
-            return avarage_position;
-        }
-        V2f32::zero()
     }
 }
 
