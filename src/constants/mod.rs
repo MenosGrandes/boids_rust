@@ -12,7 +12,7 @@ pub const VIEW_DISTANCE: f32 = BOID_SIZE as f32 * 10.0 as f32;
 use std::cell::RefCell;
 thread_local!(pub static DRAW_VIEW: RefCell<bool> = RefCell::new(false));
 
-thread_local!(pub static BORDER_BEHAVIOUR: RefCell<BorderBehaviourE> = RefCell::new(BorderBehaviourE::Reflect));
+thread_local!(pub static BORDER_BEHAVIOUR: RefCell<BorderBehaviourE> = RefCell::new(BorderBehaviourE::GoThrough));
 
 //pub static mut BORDER_BEHAVIOUR: BorderBehaviourE = BorderBehaviourE::Reflect;
 pub const MAX_BOID_SPEED: f32 = 15.0;

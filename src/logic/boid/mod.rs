@@ -24,7 +24,7 @@ pub trait Updatable {
 
 static mut BOID_ID: u32 = 0;
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Copy, Clone, Debug)]
 pub struct Boid {
     pub position: V2f32,
     pub velocity: V2f32,
@@ -149,8 +149,8 @@ impl Updatable for BoidManager {
 }
 impl Updatable for Boid {
     fn update(&mut self) {
-        BORDER_BEHAVIOUR.with(|beh| self.border(&beh.borrow()));
         self.velocity += self.acceleration * MAX_BOID_FORCE;
         self.position += self.velocity;
+        BORDER_BEHAVIOUR.with(|beh| self.border(&beh.borrow()));
     }
 }
