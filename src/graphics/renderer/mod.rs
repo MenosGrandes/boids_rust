@@ -1,11 +1,15 @@
 use crate::constants::{BEHAVIOUR_ENABLED, SCREEN_SIZE};
 use crate::logic::boid::Boid;
+use crate::math::quadtree::region::{Region, SubInto};
+use crate::math::vec::{random_color, V2usize};
+use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::{TextureQuery, WindowCanvas};
 use sdl2::ttf::{self, FontStyle};
 use sdl2::video::Window;
 
+#[macro_use]
 macro_rules! rect(
     ($x:expr, $y:expr, $w:expr, $h:expr) => (
         Rect::new($x as i32, $y as i32, $w as u32, $h as u32)
@@ -59,9 +63,33 @@ impl<'ttf, 'b> RendererManager<'ttf, 'b> {
     pub fn draw(&mut self, boids: &[Boid]) -> Result<(), String> {
         self.canvas.set_draw_color(Color::BLACK);
         self.canvas.clear();
+        
         for b in boids {
             b.draw_boid(&mut self.canvas)?;
         }
+
+        /*
+        let mut r: Region = Region::new(
+            V2usize::new(0, 0),
+            V2usize::new(SCREEN_SIZE.x as usize, SCREEN_SIZE.y as usize),
+        );
+        r.render(&mut self.canvas)?;
+
+        let r2: [Region; 4] = Region::sub_into(&r);
+        for mut r_1 in r2
+        {
+            r_1.render(&mut self.canvas)?;
+            let r3: [Region; 4] = Region::sub_into(&r_1);
+
+        for mut r_2 in r3
+        {
+            r_2.render(&mut self.canvas)?;
+        }
+
+
+
+        }
+        */
         unsafe {
             if !BEHAVIOUR_ENABLED.is_empty() {
                 self.draw_string(BEHAVIOUR_ENABLED.to_string())?;

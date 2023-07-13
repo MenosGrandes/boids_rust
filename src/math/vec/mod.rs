@@ -416,6 +416,7 @@ magnitude_impl_float!(f64);
 magnitude_impl_int!(u8);
 magnitude_impl_int!(u16);
 magnitude_impl_int!(u32);
+magnitude_impl_int!(usize);
 magnitude_impl_int!(i32);
 magnitude_impl_int!(i8);
 magnitude_impl_int!(i16);
@@ -429,10 +430,12 @@ vect_impl!(u16);
 vect_impl!(i16);
 vect_impl!(i32);
 vect_impl!(u32);
+vect_impl!(usize);
 pub type V2f32 = Vector2<f32>;
 pub type V2f64 = Vector2<f64>;
 pub type V2i32 = Vector2<i16>;
 pub type V2u32 = Vector2<u32>;
+pub type V2usize = Vector2<usize>;
 
 pub fn random_color() -> Color {
     let mut rng = rand::thread_rng();
