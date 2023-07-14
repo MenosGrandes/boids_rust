@@ -7,11 +7,13 @@ use sdl2::{
 
 use crate::{
     constants::{
-        BehaviourEnabled, BEHAVIOUR_ENABLED, BOID_SIZE, BORDER_BEHAVIOUR, DRAW_VIEW,
-        MAX_BOID_FORCE, SCREEN_SIZE, VIEW_DISTANCE,
+        BOID_SIZE, BORDER_BEHAVIOUR, DRAW_VIEW, MAX_BOID_FORCE, SCREEN_SIZE, VIEW_DISTANCE,
     },
     graphics::renderer::Renderable,
-    math::vec::{random_color, Magnitude, Vector2},
+    math::{
+        quadtree::{quadt::QuadTree, region::Region},
+        vec::{random_color, Magnitude, V2usize, Vector2},
+    },
 };
 
 use super::behaviour::traits::{
@@ -80,9 +82,10 @@ impl Boid {
 pub struct BoidManager {
     pub boids: Vec<Boid>,
     pub behaviours: Vec<Box<dyn Behaviour>>,
+    pub quad_tree: QuadTree,
 }
 impl BoidManager {
-    pub fn new() -> Self {
+    pub fn new(starting_region: Region) -> Self {
         Self {
             boids: Vec::new(),
             behaviours: vec![
@@ -90,6 +93,7 @@ impl BoidManager {
                 Box::new(SeperateBehaviour {}),
                 Box::new(CohesionBehaviour {}),
             ],
+            quad_tree: QuadTree::new(starting_region),
         }
     }
 
@@ -117,10 +121,19 @@ impl BoidManager {
         self.boids = Vec::new();
     }
 }
+impl Renderable for BoidManager {
+    fn render(&mut self, canvas: &mut WindowCanvas) -> Result<(), String> {
+        for b in self.boids.iter_mut() {
+            b.render(canvas)?;
+        }
+        self.quad_tree.render(canvas)?;
+        Ok(())
+    }
+}
 
 impl Default for BoidManager {
     fn default() -> Self {
-        Self::new()
+        Self::new(Region::default())
     }
 }
 
@@ -132,6 +145,14 @@ impl Renderable for Boid {
 }
 impl Updatable for BoidManager {
     fn update(&mut self) {
+        let r: Region = Region::new(
+            V2usize::new(0, 0),
+            V2usize::new(SCREEN_SIZE.x as usize, SCREEN_SIZE.y as usize),
+        );
+        self.quad_tree = QuadTree::new(r.clone());
+        for b in &self.boids {
+            let _ = self.quad_tree.insert(b.clone());
+        }
         for i in 0..(self.boids).len() {
             let mut b = self.boids[i];
             let other_visible_boids = b.get_other_visible(&self.boids);

@@ -1,9 +1,7 @@
 use crate::constants::{BEHAVIOUR_ENABLED, SCREEN_SIZE};
-use crate::logic::boid::Boid;
+use crate::logic::boid::{Boid, BoidManager};
 use crate::math::quadtree::quadt::QuadTree;
-use crate::math::quadtree::region::{Region, SubInto};
-use crate::math::vec::{random_color, V2usize};
-use sdl2::gfx::primitives::DrawRenderer;
+
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::{TextureQuery, WindowCanvas};
@@ -61,16 +59,17 @@ impl<'ttf, 'b> RendererManager<'ttf, 'b> {
         let canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
         Ok(RendererManager { canvas, gfx })
     }
-    pub fn draw(&mut self, boids: &[Boid], quad_tree : &mut QuadTree) -> Result<(), String> {
+    pub fn draw(&mut self, boid_manager: &mut BoidManager) -> Result<(), String> {
         self.canvas.set_draw_color(Color::BLACK);
         self.canvas.clear();
-        
 
-        for b in boids {
-            b.draw_boid(&mut self.canvas)?;
-        }
-        quad_tree.render(&mut self.canvas)?;
-
+        boid_manager.render(&mut self.canvas);
+        /*
+                for b in  boid_manager.boids{
+                    b.draw_boid(&mut self.canvas)?;
+                }
+                quad_tree.render(&mut self.canvas)?;
+        */
 
         unsafe {
             if !BEHAVIOUR_ENABLED.is_empty() {

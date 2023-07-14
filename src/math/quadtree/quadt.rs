@@ -12,23 +12,18 @@ macro_rules! rect(
 );
 #[derive(Debug)]
 pub enum QuadTree {
-    Leaf {
-        boundary: Region,
-        points: Vec<Boid>,
-    },
-    Root {
-        ne: Box<QuadTree>,
-        se: Box<QuadTree>,
-        sw: Box<QuadTree>,
-        nw: Box<QuadTree>,
-    },
+    Leaf { boundary: Region, points: Vec<Boid> },
+    Root { neighbours: [Box<QuadTree>; 4] },
 }
 impl Renderable for QuadTree {
     fn render(&mut self, canvas: &mut sdl2::render::WindowCanvas) -> Result<(), String> {
         canvas.set_draw_color(random_color());
 
         match self {
-            QuadTree::Leaf { boundary, points : _ } => {
+            QuadTree::Leaf {
+                boundary,
+                points: _,
+            } => {
                 let _ = canvas.draw_rect(rect!(
                     boundary.left_up.x,
                     boundary.left_up.y,
@@ -36,11 +31,10 @@ impl Renderable for QuadTree {
                     boundary.width_height.y
                 ));
             }
-            QuadTree::Root { ne, se, sw, nw } => {
-                let _ = ne.render(canvas);
-                let _ = se.render(canvas);
-                let _ = sw.render(canvas);
-                let _ = nw.render(canvas);
+            QuadTree::Root { neighbours } => {
+                for n in neighbours {
+                    n.render(canvas);
+                }
             }
         }
 
@@ -63,9 +57,7 @@ impl QuadTree {
                 boundary: _,
                 points,
             } => return points.len(),
-            QuadTree::Root { ne, se, sw, nw } => {
-                return ne.count() + se.count() + sw.count() + nw.count()
-            }
+            QuadTree::Root { neighbours } => neighbours.into_iter().map(|n| n.count()).sum(),
         }
     }
 
@@ -82,7 +74,13 @@ impl QuadTree {
                     return Ok(());
                 }
             }
-            QuadTree::Root { ne, se, sw, nw } => {
+            QuadTree::Root { neighbours } => {
+                for n in neighbours {
+                    if n.insert(point).is_ok() {
+                        return Ok(());
+                    }
+                }
+                /*
                 if ne.insert(point).is_ok() {
                     return Ok(());
                 } else if se.insert(point).is_ok() {
@@ -91,7 +89,7 @@ impl QuadTree {
                     return Ok(());
                 } else if nw.insert(point).is_ok() {
                     return Ok(());
-                }
+                }*/
                 return Err("Point couldn't be inserted in any sub-tree");
             }
         }
@@ -101,11 +99,11 @@ impl QuadTree {
         match self {
             QuadTree::Leaf { boundary, points } => {
                 let b = Region::sub_into(&boundary);
+                
+                let nei : [Box<QuadTree>;4] = b.into_iter().map(|r| Box::new(QuadTree::new(r.clone()))).collect::<Vec<Box<QuadTree>>>().try_into().unwrap();
+
                 let mut new = QuadTree::Root {
-                    ne: Box::new(QuadTree::new(b[0].clone())),
-                    se: Box::new(QuadTree::new(b[1].clone())),
-                    sw: Box::new(QuadTree::new(b[2].clone())),
-                    nw: Box::new(QuadTree::new(b[3].clone())),
+                    neighbours: nei
                 };
                 for p in points {
                     new.insert(*p).unwrap();

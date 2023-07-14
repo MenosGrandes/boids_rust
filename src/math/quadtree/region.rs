@@ -1,7 +1,7 @@
 use crate::{
     graphics::renderer::Renderable,
     logic::boid::Boid,
-    math::vec::{random_color, Distance, V2usize},
+    math::vec::{random_color, V2usize},
 };
 use sdl2::rect::Rect;
 
@@ -18,6 +18,11 @@ pub struct Region {
     pub left_up: V2usize,
     pub right_down: V2usize,
     pub width_height: V2usize,
+}
+impl Default for Region {
+    fn default() -> Self {
+        Self::new(V2usize::zero(), V2usize::zero())
+    }
 }
 
 impl Region {

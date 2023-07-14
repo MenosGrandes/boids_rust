@@ -9,7 +9,7 @@ extern crate sdl2;
 
 use std::time::Duration;
 
-use constants::{BehaviourEnabled, BEHAVIOUR_ENABLED, BORDER_BEHAVIOUR, DRAW_VIEW, SCREEN_SIZE, BOID_SIZE};
+use constants::{BehaviourEnabled, BEHAVIOUR_ENABLED, BORDER_BEHAVIOUR, DRAW_VIEW, SCREEN_SIZE};
 use graphics::renderer::{GfxSubsystem, RendererManager};
 use logic::behaviour::traits::BorderBehaviourE;
 use logic::boid::{BoidManager, Updatable};
@@ -34,15 +34,14 @@ pub fn main() -> Result<(), String> {
 
     let mut fps_manager: FPSManager = FPSManager::new();
     fps_manager.set_framerate(120)?;
-    let mut boid_manager = BoidManager::new();
-    boid_manager.spawn_boid(1000);
+    let r: Region = Region::new(
+        V2usize::new(0, 0),
+        V2usize::new(SCREEN_SIZE.x as usize, SCREEN_SIZE.y as usize),
+    );
+    let mut boid_manager = BoidManager::new(r);
+    boid_manager.spawn_boid(500);
     let mut event_pump = gss.sdl_context.event_pump()?;
     let mut renderer = RendererManager::new(window, gss)?;
-
-    let r: Region = Region::new(
-        V2usize::new(0,0),
-        V2usize::new(SCREEN_SIZE.x as usize, SCREEN_SIZE.y as usize ),
-    );
 
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -92,18 +91,12 @@ pub fn main() -> Result<(), String> {
                 _ => {}
             }
         }
-        let mut quad_tree = QuadTree::new(r.clone());
-        for b in &boid_manager.boids
-        {
-            quad_tree.insert(b.clone())?;
-        }
-        renderer.draw(&boid_manager.boids,&mut quad_tree)?;
+        renderer.draw(&mut boid_manager)?;
         ::std::thread::sleep(Duration::new(
             0,
             1_000_000_000u32 / fps_manager.get_framerate() as u32,
         ));
         boid_manager.update();
-        
     }
 
     Ok(())
