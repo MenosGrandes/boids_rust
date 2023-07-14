@@ -12,7 +12,7 @@ macro_rules! rect(
 );
 #[derive(Debug)]
 pub enum QuadTree {
-    Leaf { boundary: Region, points: Vec<Boid> },
+    Leaf { boundary: Region, boids: Vec<Boid> },
     Root { neighbours: [Box<QuadTree>; 4] },
 }
 impl Renderable for QuadTree {
@@ -22,7 +22,7 @@ impl Renderable for QuadTree {
         match self {
             QuadTree::Leaf {
                 boundary,
-                points: _,
+                boids,
             } => {
                 let _ = canvas.draw_rect(rect!(
                     boundary.left_up.x,
@@ -30,6 +30,10 @@ impl Renderable for QuadTree {
                     boundary.width_height.x,
                     boundary.width_height.y
                 ));
+                for b in boids
+                {
+                    b.render(canvas);
+                }
             }
             QuadTree::Root { neighbours } => {
                 for n in neighbours {
@@ -47,7 +51,7 @@ impl QuadTree {
     pub fn new(boundary: Region) -> Self {
         QuadTree::Leaf {
             boundary,
-            points: Vec::new(),
+            boids: Vec::new(),
         }
     }
 
@@ -55,7 +59,7 @@ impl QuadTree {
         match self {
             QuadTree::Leaf {
                 boundary: _,
-                points,
+                boids: points,
             } => return points.len(),
             QuadTree::Root { neighbours } => neighbours.into_iter().map(|n| n.count()).sum(),
         }
@@ -63,7 +67,7 @@ impl QuadTree {
 
     pub fn insert(&mut self, point: Boid) -> Result<(), &str> {
         match self {
-            QuadTree::Leaf { boundary, points } => {
+            QuadTree::Leaf { boundary, boids: points } => {
                 if !boundary.contains(&point) {
                     return Err("Boundary doesn't contain point");
                 } else if points.len() == QuadTree::MAX_CAPACITY {
@@ -97,14 +101,17 @@ impl QuadTree {
 
     fn subdivide(&mut self) {
         match self {
-            QuadTree::Leaf { boundary, points } => {
+            QuadTree::Leaf { boundary, boids: points } => {
                 let b = Region::sub_into(&boundary);
-                
-                let nei : [Box<QuadTree>;4] = b.into_iter().map(|r| Box::new(QuadTree::new(r.clone()))).collect::<Vec<Box<QuadTree>>>().try_into().unwrap();
 
-                let mut new = QuadTree::Root {
-                    neighbours: nei
-                };
+                let nei: [Box<QuadTree>; 4] = b
+                    .into_iter()
+                    .map(|r| Box::new(QuadTree::new(r.clone())))
+                    .collect::<Vec<Box<QuadTree>>>()
+                    .try_into()
+                    .unwrap();
+
+                let mut new = QuadTree::Root { neighbours: nei };
                 for p in points {
                     new.insert(*p).unwrap();
                 }

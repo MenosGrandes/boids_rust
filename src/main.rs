@@ -39,9 +39,10 @@ pub fn main() -> Result<(), String> {
         V2usize::new(SCREEN_SIZE.x as usize, SCREEN_SIZE.y as usize),
     );
     let mut boid_manager = BoidManager::new(r);
-    boid_manager.spawn_boid(500);
+    boid_manager.spawn_boid(10);
     let mut event_pump = gss.sdl_context.event_pump()?;
     let mut renderer = RendererManager::new(window, gss)?;
+    let mut tick = 0;
 
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -53,10 +54,6 @@ pub fn main() -> Result<(), String> {
                 } => match keycode {
                     Keycode::W => {
                         boid_manager.add_boid(1);
-                    }
-                    Keycode::Q => {
-                        boid_manager.remove_all_boids();
-                        boid_manager.spawn_boid(1);
                     }
                     Keycode::D => {
                         DRAW_VIEW.with(|value: &std::cell::RefCell<bool>| {
@@ -97,6 +94,8 @@ pub fn main() -> Result<(), String> {
             1_000_000_000u32 / fps_manager.get_framerate() as u32,
         ));
         boid_manager.update();
+        println!("{:?}", tick);
+        tick+=1;
     }
 
     Ok(())

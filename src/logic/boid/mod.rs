@@ -120,6 +120,52 @@ impl BoidManager {
     pub fn remove_all_boids(&mut self) {
         self.boids = Vec::new();
     }
+    pub fn update_boids_in_region(&self, boids :&mut [Boid]) {
+        /*
+        for i in 0..(boids).len() {
+            let mut b =boids[i];
+            let other_visible_boids = boids; // b.get_other_visible(&self.boids);
+
+            if other_visible_boids.len() > 0 {
+                for behaviour in &self.behaviours {
+                    b.acceleration += behaviour.calculate(&b, &other_visible_boids);
+                }
+            }
+            b.update();
+            b.acceleration = V2f32::zero();
+            boids[i] = b;
+        }*/
+    }
+
+    fn update_boids_in_quad_tree(&mut self) {
+
+        for i in 0..(self.boids).len() {
+            let mut b =self.boids[i];
+            let other_visible_boids =  b.get_other_visible(&self.boids);
+
+            if other_visible_boids.len() > 0 {
+                for behaviour in &self.behaviours {
+                    b.acceleration += behaviour.calculate(&b, &other_visible_boids);
+                }
+            }
+            b.update();
+            b.acceleration = V2f32::zero();
+            self.boids[i] = b;
+        }
+        //self.update_boids_in_region(&mut self.boids);
+        /*
+        match &self.quad_tree {
+            QuadTree::Leaf {
+                boundary: _,
+                boids,
+            } => {
+                self.update_boids_in_region(&boids);
+            }
+            QuadTree::Root { neighbours} => {
+
+            }
+        }*/
+    }
 }
 impl Renderable for BoidManager {
     fn render(&mut self, canvas: &mut WindowCanvas) -> Result<(), String> {
@@ -151,8 +197,9 @@ impl Updatable for BoidManager {
         );
         self.quad_tree = QuadTree::new(r.clone());
         for b in &self.boids {
-            let _ = self.quad_tree.insert(b.clone());
+            let _ = self.quad_tree.insert(*b);
         }
+        /*
         for i in 0..(self.boids).len() {
             let mut b = self.boids[i];
             let other_visible_boids = b.get_other_visible(&self.boids);
@@ -166,6 +213,9 @@ impl Updatable for BoidManager {
             b.acceleration = V2f32::zero();
             self.boids[i] = b;
         }
+        */
+
+        self.update_boids_in_quad_tree();
     }
 }
 impl Updatable for Boid {
