@@ -1,14 +1,14 @@
 use sdl2::render::WindowCanvas;
 
 use crate::{
-    constants::{types::AreaId, BOID_SIZE, SCREEN_SIZE},
+    constants::{types::AreaId, SCREEN_SIZE},
     graphics::renderer::Renderable,
     logic::behaviour::traits::{
-        AlignBehaviour, Behaviour, CohesionBehaviour, SeeBehaviour, SeperateBehaviour,
+        AlignBehaviour, Behaviour, CohesionBehaviour, SeperateBehaviour,
     },
     math::{
         quadtree::{quadt::QuadTree, region::Region},
-        vec::{random_color, Magnitude, V2f32, V2usize, Vector2},
+        vec::{random_color, Magnitude, V2usize, Vector2},
     },
 };
 

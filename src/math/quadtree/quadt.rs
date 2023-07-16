@@ -1,7 +1,7 @@
 use std::mem;
 
-use crate::constants::types::{AreaId, BoidId};
-use crate::constants::{IdIterator, AREA_ID_ITERATOR};
+use crate::constants::types::{AreaId};
+use crate::constants::{AREA_ID_ITERATOR};
 use crate::logic::boid::boid_impl::Boid;
 use crate::{graphics::renderer::Renderable, math::vec::random_color};
 
