@@ -1,6 +1,6 @@
 use crate::{
     graphics::renderer::Renderable,
-    logic::boid::Boid,
+    logic::boid::boid_impl::Boid,
     math::vec::{random_color, V2usize},
 };
 use sdl2::rect::Rect;

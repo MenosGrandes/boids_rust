@@ -15,12 +15,13 @@ thread_local!(pub static DRAW_VIEW: RefCell<bool> = RefCell::new(false));
 thread_local!(pub static BORDER_BEHAVIOUR: RefCell<BorderBehaviourE> = RefCell::new(BorderBehaviourE::GoThrough));
 
 //pub static mut BORDER_BEHAVIOUR: BorderBehaviourE = BorderBehaviourE::Reflect;
-pub const MAX_BOID_SPEED: f32 = 15.0;
+pub const MAX_BOID_SPEED: f32 = 3.0;
 pub const MAX_BOID_FORCE: f32 = 0.2;
 
 pub const ALLIGN_FACTOR: f32 = 0.3;
-pub const COHESION_FACTOR: f32 = 0.3;
+pub const COHESION_FACTOR: f32 = 0.1;
 pub const SEPERATE_FACTOR: f32 = 0.39;
+pub const UPDATE_EVERY_TICK: u8 = 1;
 
 use bitflags::bitflags;
 
@@ -50,3 +51,25 @@ impl FromStr for BehaviourEnabled {
         Ok(Self(behaviour_enabled.parse()?))
     }
 }
+
+pub struct IdIterator {
+    i: u64,
+}
+
+impl IdIterator {
+    const MAX_VALUE: u64 = u64::MAX;
+    pub fn get_next(&mut self) -> u64 {
+        if self.i + 1 == Self::MAX_VALUE {
+            self.i = 0;
+        }
+        self.i += 1;
+        return self.i;
+    }
+    pub fn new() -> Self {
+        Self { i: 0 }
+    }
+}
+thread_local!(pub static AREA_ID_ITERATOR: RefCell<IdIterator> = RefCell::new(IdIterator::new()));
+thread_local!(pub static BOID_ID_ITERATOR: RefCell<IdIterator> = RefCell::new(IdIterator::new()));
+
+pub mod types;

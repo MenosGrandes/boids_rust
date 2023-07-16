@@ -1,10 +1,7 @@
-use crate::{
-    constants::*,
-    logic::{behaviour::traits::SeeBehaviour, boid::Boid},
-    math::vec::*,
-};
+use crate::logic::boid::boid_impl::Boid;
+use crate::{constants::*, math::vec::*};
 
-use super::traits::{BorderBehaviour, BorderBehaviourE};
+use super::traits::{BorderBehaviour, BorderBehaviourE, SeeBehaviour};
 
 impl SeeBehaviour for Boid {
     fn get_other_visible(self, other: &[Boid]) -> Vec<Boid> {

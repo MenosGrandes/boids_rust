@@ -1,9 +1,9 @@
+use crate::logic::boid::boid_impl::Boid;
 use crate::{
     constants::{
         BehaviourEnabled, ALLIGN_FACTOR, BEHAVIOUR_ENABLED, COHESION_FACTOR, MAX_BOID_SPEED,
         SEPERATE_FACTOR,
     },
-    logic::boid::Boid,
     math::vec::{Magnitude, V2f32},
 };
 
@@ -25,9 +25,16 @@ impl Behaviour for AlignBehaviour {
         if !unsafe { BEHAVIOUR_ENABLED.contains(BehaviourEnabled::ALLIGN) } {
             return V2f32::zero();
         }
-        let mut avarage_velocity: V2f32 =
-            other_boids.iter().map(|boid| boid.velocity).sum::<V2f32>()
-                / (other_boids.len() as f32);
+        if other_boids.len() == 1 {
+            return V2f32::zero();
+        }
+        //There is only same ID boid in array.
+        let mut avarage_velocity: V2f32 = other_boids
+            .iter()
+            .filter(|b| b.id != self_boid.id)
+            .map(|boid| boid.velocity)
+            .sum::<V2f32>()
+            / (other_boids.len() as f32);
 
         avarage_velocity.set_magnitude(MAX_BOID_SPEED);
         avarage_velocity -= self_boid.velocity;
@@ -41,9 +48,15 @@ impl Behaviour for CohesionBehaviour {
         if !unsafe { BEHAVIOUR_ENABLED.contains(BehaviourEnabled::COHESION) } {
             return V2f32::zero();
         }
-        let mut avarage_position: V2f32 =
-            other_boids.iter().map(|boid| boid.position).sum::<V2f32>()
-                / (other_boids.len() as f32);
+        if other_boids.len() == 1 {
+            return V2f32::zero();
+        }
+        let mut avarage_position: V2f32 = other_boids
+            .iter()
+            .filter(|b| b.id != self_boid.id)
+            .map(|boid| boid.position)
+            .sum::<V2f32>()
+            / (other_boids.len() as f32);
 
         avarage_position -= self_boid.position;
         avarage_position.set_magnitude(MAX_BOID_SPEED);
@@ -59,8 +72,12 @@ impl Behaviour for SeperateBehaviour {
         if !unsafe { BEHAVIOUR_ENABLED.contains(BehaviourEnabled::SEPERATE) } {
             return V2f32::zero();
         }
+        if other_boids.len() == 1 {
+            return V2f32::zero();
+        }
         let mut avarage_position: V2f32 = other_boids
             .iter()
+            .filter(|b| b.id != self_boid.id)
             .map(|boid| self_boid.position - boid.position)
             .sum::<V2f32>()
             / (other_boids.len() as f32);

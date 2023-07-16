@@ -1,6 +1,5 @@
 use crate::constants::{BEHAVIOUR_ENABLED, SCREEN_SIZE};
-use crate::logic::boid::{Boid, BoidManager};
-use crate::math::quadtree::quadt::QuadTree;
+use crate::logic::boid::boid_mgr::BoidManager;
 
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
@@ -8,7 +7,6 @@ use sdl2::render::{TextureQuery, WindowCanvas};
 use sdl2::ttf::{self, FontStyle};
 use sdl2::video::Window;
 
-#[macro_use]
 macro_rules! rect(
     ($x:expr, $y:expr, $w:expr, $h:expr) => (
         Rect::new($x as i32, $y as i32, $w as u32, $h as u32)
@@ -63,7 +61,7 @@ impl<'ttf, 'b> RendererManager<'ttf, 'b> {
         self.canvas.set_draw_color(Color::BLACK);
         self.canvas.clear();
 
-        boid_manager.render(&mut self.canvas);
+        boid_manager.render(&mut self.canvas)?;
         /*
                 for b in  boid_manager.boids{
                     b.draw_boid(&mut self.canvas)?;
