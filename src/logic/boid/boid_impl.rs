@@ -13,19 +13,18 @@ use crate::{
     },
     graphics::renderer::Renderable,
     logic::behaviour::traits::BorderBehaviour,
-    math::{vec::V2f32, quadtree::region::Region},
+    math::{quadtree::region::Region, vec::V2f32},
 };
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone)]
 pub struct Boid {
     pub position: V2f32,
     pub velocity: V2f32,
     pub acceleration: V2f32,
     color: Color,
     pub id: BoidId,
-    pub area_id: AreaId,
 }
-/*
+
 impl std::fmt::Debug for Boid {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Boid")
@@ -33,7 +32,7 @@ impl std::fmt::Debug for Boid {
             .field("pos", &self.position)
             .finish()
     }
-}*/
+}
 impl Boid {
     pub fn new(position: V2f32, velocity: V2f32, acceleration: V2f32, color: Color) -> Self {
         Self {
@@ -42,7 +41,6 @@ impl Boid {
             acceleration,
             color,
             id: BOID_ID_ITERATOR.with(|id| id.borrow_mut().get_next()),
-            area_id: 0,
         }
     }
 
@@ -52,7 +50,8 @@ impl Boid {
             if *value.borrow() {
                 let r = Region::rect_from_center(self.position, VIEW_DISTANCE);
                 let rect = Rect::new(
-                    r.left_up.x as i32, r.left_up.y as i32,
+                    r.left_up.x as i32,
+                    r.left_up.y as i32,
                     r.width_height.x as u32,
                     r.width_height.y as u32,
                 );

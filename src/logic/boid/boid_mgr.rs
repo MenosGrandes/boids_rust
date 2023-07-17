@@ -1,7 +1,7 @@
-use sdl2::render::WindowCanvas;
+use sdl2::{render::WindowCanvas, pixels::Color};
 
 use crate::{
-    constants::{types::AreaId, SCREEN_SIZE, VIEW_DISTANCE},
+    constants::{BOID_SIZE, SCREEN_SIZE, VIEW_DISTANCE},
     graphics::renderer::Renderable,
     logic::behaviour::traits::{AlignBehaviour, Behaviour, CohesionBehaviour, SeperateBehaviour},
     math::{
@@ -11,18 +11,6 @@ use crate::{
 };
 
 use super::{boid_impl::Boid, traits::Updatable};
-
-#[derive(Debug)]
-pub struct BoidInArea {
-    pub boids: Vec<Boid>,
-    pub area_id: AreaId,
-}
-
-impl BoidInArea {
-    pub fn new(boids: Vec<Boid>, area_id: AreaId) -> Self {
-        Self { boids, area_id }
-    }
-}
 
 pub struct BoidManager {
     pub boids: Vec<Boid>,
@@ -45,13 +33,20 @@ impl BoidManager {
     }
 
     pub fn add_boid(&mut self, amount: u64) {
-        for _ in 0..amount {
+        let x: f32 = SCREEN_SIZE.x as f32 / amount as f32;
+        let y: f32 = SCREEN_SIZE.y as f32 / amount as f32;
+        for i in 0..amount {
             let mut c = Vector2::random(-1.0, 1.0); //
             c.set_magnitude(2.0);
             self.boids.push(Boid::new(
+                /*
                 Vector2::random_from_vec(
                     Vector2::new(0.0, SCREEN_SIZE.x as f32),
                     Vector2::new(0.0, SCREEN_SIZE.y as f32),
+                )*/
+                Vector2::new(
+                    i as f32 * x + BOID_SIZE as f32,
+                    i as f32 * y + BOID_SIZE as f32,
                 ),
                 c,
                 Vector2::new(0.01, 0.01),
@@ -66,54 +61,89 @@ impl BoidManager {
     pub fn remove_all_boids(&mut self) {
         self.boids = Vec::new();
     }
-    pub fn update_boids_in_region(
-        &self,
-        quad_tree: &QuadTree,
-        boids_to_return: &mut Vec<BoidInArea>,
-    ) {
-        match &quad_tree {
-            QuadTree::Leaf {
-                boundary: _,
-                boids,
-                id,
-            } => {
-                let b_in_area = BoidInArea::new(boids.to_vec(), *id);
-                boids_to_return.push(b_in_area);
-            }
-            QuadTree::Root { neighbours } => {
-                for n in neighbours {
-                    self.update_boids_in_region(n, boids_to_return);
-                }
-            }
-        }
-    }
 
     fn update_boids_in_quad_tree(&mut self) {
-        for current_boid_id in 0..self.boids.len() {
+        for boid_id in 0..self.boids.len() {
+            log::info!("START loopin on boid {:?}", self.boids[boid_id]);
             let mut other_visible_boids: Vec<Boid> = Vec::new();
-            let region: Region = Region::rect_from_center(self.boids[current_boid_id].position, VIEW_DISTANCE);
+            let region: Region =
+                Region::rect_from_center(self.boids[boid_id].position, VIEW_DISTANCE);
             self.quad_tree
                 .get_all_boids_in_boundry(&region, &mut other_visible_boids);
+            if other_visible_boids.len() == 1 {
+                self.boids[boid_id].update();
+                log::info!("END Only one. loopin on boid {:?}", self.boids[boid_id]);
+                continue;
+            }
+            log::info!("Region{:?}", region);
+            log::info!("Boids {:?}", other_visible_boids);
 
             for b in &other_visible_boids {
+                log::info!("internal loop on boid {:?}", b);
                 let mut b_copy = b.clone();
                 for behaviour in &self.behaviours {
                     b_copy.acceleration += behaviour.calculate(&b_copy, &other_visible_boids);
                 }
+                if b_copy.acceleration != Vector2::zero() {
+                    log::info!("Acceleration changed boid {:?}", b);
+                }
                 b_copy.update();
-                self.boids[b_copy.id as usize - 1] = b_copy;
+                self.boids[b_copy.id] = b_copy;
             }
+            log::info!("END loopin on boid {:?}", self.boids[boid_id]);
         }
     }
 }
 impl Renderable for BoidManager {
     fn render(&mut self, canvas: &mut WindowCanvas) -> Result<(), String> {
+        /*
         for b in self.boids.iter_mut() {
             b.render(canvas)?;
             let mut region: Region = Region::rect_from_center(b.position, VIEW_DISTANCE);
             region.render(canvas)?;
-        }
-        self.quad_tree.render(canvas)?;
+        }*/
+
+        let mut r = Region::new(Vector2::new(0.0, 0.0), Vector2::new(300.0, 300.0));
+        r.render(canvas)?;
+
+    let mut q = QuadTree::new(r.clone());
+
+    let amount = 10;
+    let x = r.right_down.x / amount as f32;
+    let y = r.right_down.y / amount as f32;
+    let mut q = QuadTree::new(r.clone());
+    let mut boids = vec![];
+
+    for i in 0..3{
+        let boid = Boid::new(
+            Vector2::new(
+                i as f32 * x + BOID_SIZE as f32,
+                i as f32 * y + BOID_SIZE as f32,
+            ),
+            Vector2::zero(),
+            Vector2::zero(),
+            Color::RGB(255, 0, 0),
+        );
+        boids.push(boid);
+        let _ = q.insert(boid);
+    }
+    let distance = x;
+    for mut b in boids
+    {
+        log::info!("START {}", b.id);
+        let mut r = Region::rect_from_center(b.position, distance);
+        let mut boids_in_region = vec![];
+        log::info!("query boundry {:?}", r);
+        q.get_all_boids_in_boundry(&r, &mut boids_in_region);
+        b.render(canvas)?;
+        r.render(canvas)?;
+        log::info!(" boids in region {:?}", boids_in_region);
+        log::info!(" END{}", b.id);
+    }
+    q.render(canvas)?;
+
+
+        //self.quad_tree.render(canvas)?;
         Ok(())
     }
 }
@@ -132,14 +162,14 @@ impl Updatable for BoidManager {
                 Vector2::new(SCREEN_SIZE.x as f32, SCREEN_SIZE.y as f32),
             );
             self.quad_tree = QuadTree::new(scren_size_region);
-            let mut len = 0;
             for b in self.boids.iter_mut() {
-                let area_id = self.quad_tree.insert(*b, &mut len);
-                match area_id {
-                    Ok(id) => {
-                        b.area_id = id;
+                let ok = self.quad_tree.insert(*b);
+                match ok {
+                    Ok(_) => {}
+                    Err(err) => {
+                        log::error!("{}", err);
+                        panic!("{}", err)
                     }
-                    Err(err) => panic!("{} {}", err, len),
                 }
             }
             self.update_tick = 0;
@@ -148,3 +178,8 @@ impl Updatable for BoidManager {
         self.update_tick += 1;
     }
 }
+#[test]
+fn get_all_boids_in_boundry() {}
+
+#[test]
+fn update_boids_in_quad_tree() {}

@@ -26,15 +26,12 @@ impl Default for Region {
 }
 
 impl Region {
-    pub fn rect_from_center(center : V2f32, view_distance : f32) -> Self
-    {
-
-        let przekatna = (view_distance * f32::sqrt(2.0) ) /2.0;
-        Self
-        {
-            left_up: center - przekatna/2.0 ,
-            right_down : center + przekatna/2.0 ,
-            width_height: V2f32::new(przekatna,przekatna)
+    pub fn rect_from_center(center: V2f32, view_distance: f32) -> Self {
+        let przekatna = (view_distance * f32::sqrt(2.0)) / 2.0;
+        Self {
+            left_up: center - przekatna / 2.0,
+            right_down: center + przekatna / 2.0,
+            width_height: V2f32::new(przekatna, przekatna),
         }
     }
     pub fn new(left_up: V2f32, right_down: V2f32) -> Self {

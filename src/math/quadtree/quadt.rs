@@ -1,13 +1,14 @@
 use std::mem;
 
-use crate::constants::types::AreaId;
-use crate::constants::{AREA_ID_ITERATOR, MAX_BOID_IN_AREA};
+use crate::constants::{BOID_SIZE, MAX_BOID_IN_AREA, VIEW_DISTANCE};
 use crate::logic::boid::boid_impl::Boid;
+use crate::math::vec::Vector2;
 use crate::{graphics::renderer::Renderable, math::vec::random_color};
 
 use super::region::Region;
 use super::traits::{Intersect, SubInto};
 
+use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 macro_rules! rect(
     ($x:expr, $y:expr, $w:expr, $h:expr) => (
@@ -16,25 +17,15 @@ macro_rules! rect(
 );
 #[derive(Debug)]
 pub enum QuadTree {
-    Leaf {
-        id: AreaId,
-        boundary: Region,
-        boids: Vec<Boid>,
-    },
-    Root {
-        neighbours: [Box<QuadTree>; 4],
-    },
+    Leaf { boundary: Region, boids: Vec<Boid> },
+    Root { neighbours: [Box<QuadTree>; 4] },
 }
 impl Renderable for QuadTree {
     fn render(&mut self, canvas: &mut sdl2::render::WindowCanvas) -> Result<(), String> {
         canvas.set_draw_color(random_color());
 
         match self {
-            QuadTree::Leaf {
-                boundary,
-                boids: _,
-                id: _,
-            } => {
+            QuadTree::Leaf { boundary, boids: _ } => {
                 let _ = canvas.draw_rect(rect!(
                     boundary.left_up.x,
                     boundary.left_up.y,
@@ -57,7 +48,6 @@ impl QuadTree {
         QuadTree::Leaf {
             boundary,
             boids: Vec::new(),
-            id: AREA_ID_ITERATOR.with(|n| n.borrow_mut().get_next()),
         }
     }
 
@@ -66,38 +56,32 @@ impl QuadTree {
             QuadTree::Leaf {
                 boundary: _,
                 boids: points,
-                id: _,
             } => return points.len(),
             QuadTree::Root { neighbours } => neighbours.into_iter().map(|n| n.count()).sum(),
         }
     }
 
-    pub fn insert(&mut self, boid: Boid, len: &mut usize) -> Result<AreaId, String> {
+    pub fn insert(&mut self, boid: Boid) -> Result<(), &str> {
         match self {
-            QuadTree::Leaf {
-                boundary,
-                boids,
-                id,
-            } => {
+            QuadTree::Leaf { boundary, boids } => {
                 if !boundary.contains_boid(&boid) {
-                    return Err("Boundary doesn't contain boid".to_string());
+                    return Err("Boundary doesn't contain boid");
                 } else if boids.len() == MAX_BOID_IN_AREA {
-                    *len = boids.len() + *len;
                     self.subdivide();
-                    return self.insert(boid, len);
+                    return self.insert(boid);
                 } else {
                     boids.push(boid);
-                    return Ok(*id);
+                    return Ok(());
                 }
             }
             QuadTree::Root { neighbours } => {
                 for n in neighbours {
-                    let ok = n.insert(boid, len);
+                    let ok = n.insert(boid);
                     if ok.is_ok() {
                         return ok;
                     }
                 }
-                return Err(format!("Boid couldn't be inserted in any sub-tree {}", len));
+                return Err("Boid couldn't be inserted in any sub-tree ");
             }
         }
     }
@@ -107,7 +91,6 @@ impl QuadTree {
             QuadTree::Leaf {
                 boundary,
                 boids: points,
-                id: _,
             } => {
                 let b = Region::sub_into(&boundary);
 
@@ -119,9 +102,8 @@ impl QuadTree {
                     .unwrap();
 
                 let mut new = QuadTree::Root { neighbours: nei };
-                let mut len = 0;
                 for p in points {
-                    new.insert(*p, &mut len).unwrap();
+                    new.insert(*p).unwrap();
                 }
                 let _ = mem::replace(self, new);
             }
@@ -130,16 +112,14 @@ impl QuadTree {
     }
     pub fn get_all_boids_in_boundry(&self, query_boundry: &Region, found_boids: &mut Vec<Boid>) {
         match self {
-            QuadTree::Leaf {
-                id: _,
-                boundary,
-                boids,
-            } => {
+            QuadTree::Leaf { boundary, boids } => {
                 if !query_boundry.intersect_with(boundary) {
                     return;
                 }
+                log::info!("boundry = {:?}", boundary);
                 for b in boids {
                     if boundary.contains_boid(b) {
+                        log::info!("Push {:?}",b);
                         found_boids.push(*b);
                     }
                 }
@@ -150,6 +130,90 @@ impl QuadTree {
                     n.get_all_boids_in_boundry(query_boundry, found_boids);
                 }
             }
+        }
+    }
+}
+#[test]
+fn get_all_boids_in_boundry() {
+    let r = Region::new(Vector2::new(0.0, 0.0), Vector2::new(300.0, 300.0));
+    let amount = 10;
+    let x = r.right_down.x / amount as f32;
+    let y = r.right_down.y / amount as f32;
+    let mut q = QuadTree::new(r.clone());
+
+    for i in 0..amount {
+        let _ = q.insert(Boid::new(
+            Vector2::new(
+                i as f32 * x + BOID_SIZE as f32,
+                i as f32 * y + BOID_SIZE as f32,
+            ),
+            Vector2::zero(),
+            Vector2::zero(),
+            Color::RGB(0, 0, 0),
+        ));
+    }
+
+    assert_eq!(q.count(), amount);
+    {
+        let mut boids_in_region = vec![];
+        q.get_all_boids_in_boundry(&r.clone(), &mut boids_in_region);
+        assert_eq!(boids_in_region.len(), amount);
+    }
+    {
+        for i in 0..amount {
+            let r = Region::new(
+                Vector2::new(0.0, 0.0),
+                Vector2::new(
+                    i as f32 * x + BOID_SIZE as f32,
+                    i as f32 * y + BOID_SIZE as f32,
+                ),
+            );
+            let mut boids_in_region = vec![];
+            q.get_all_boids_in_boundry(&r, &mut boids_in_region);
+            assert_eq!(boids_in_region.len(), i + 1);
+        }
+    }
+}
+
+#[test]
+fn get_all_boids_in_boundry_view_of_boid() {
+    let r = Region::new(Vector2::new(0.0, 0.0), Vector2::new(300.0, 300.0));
+    let amount = 10;
+    let x = r.right_down.x / amount as f32;
+    let y = r.right_down.y / amount as f32;
+    let mut q = QuadTree::new(r.clone());
+    let mut boids = vec![];
+
+    for i in 0..3{
+        let boid = Boid::new(
+            Vector2::new(
+                i as f32 * x + BOID_SIZE as f32,
+                i as f32 * y + BOID_SIZE as f32,
+            ),
+            Vector2::zero(),
+            Vector2::zero(),
+            Color::RGB(0, 0, 0),
+        );
+        boids.push(boid);
+        let _ = q.insert(boid);
+    }
+    {
+        let distance = 1.0;
+        for b in &boids {
+            let r = Region::rect_from_center(b.position, distance);
+            let mut boids_in_region = vec![];
+            q.get_all_boids_in_boundry(&r, &mut boids_in_region);
+            assert_eq!(boids_in_region.len(), 1);
+        }
+    }
+    {
+        let distance = x;
+        for b in &boids {
+            let r = Region::rect_from_center(b.position, distance);
+            let mut boids_in_region = vec![];
+            q.get_all_boids_in_boundry(&r, &mut boids_in_region);
+            println!("{}",b.id);
+            assert_eq!(boids_in_region.len(), 1);
         }
     }
 }

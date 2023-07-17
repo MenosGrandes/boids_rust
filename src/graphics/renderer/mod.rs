@@ -69,7 +69,6 @@ impl<'ttf, 'b> RendererManager<'ttf, 'b> {
                     b.draw_boid(&mut self.canvas)?;
                 }
                 quad_tree.render(&mut self.canvas)?;
-        */
 
         unsafe {
             if !BEHAVIOUR_ENABLED.is_empty() {
@@ -78,6 +77,7 @@ impl<'ttf, 'b> RendererManager<'ttf, 'b> {
                 self.draw_string((&"NONE").to_string())?;
             }
         }
+        */
 
         self.canvas.present();
         Ok(())

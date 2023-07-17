@@ -12,6 +12,8 @@ num = "0.4.0"
 approx = "0.5.1"
 bitflags = "2.3.3"
 crossbeam = "0.8.2"
+log4rs = "1.2.0"
+log = "0.4.19"
 
 [profile.release]
 incremental = true

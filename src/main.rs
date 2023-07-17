@@ -23,7 +23,23 @@ use sdl2::keyboard::Keycode;
 
 use crate::logic::boid::traits::Updatable;
 
+use log::LevelFilter;
+use log4rs::append::file::FileAppender;
+use log4rs::config::{Appender, Config, Root};
+use log4rs::encode::pattern::PatternEncoder;
+
 pub fn main() -> Result<(), String> {
+    /*Init Logger*/
+    let logfile = FileAppender::builder()
+        .encoder(Box::new(PatternEncoder::new("{d}: {l} - {m}\n")))
+        .build("log/output.log");
+
+    let config = Config::builder()
+        .appender(Appender::builder().build("logfile", Box::new(logfile.unwrap())))
+        .build(Root::builder().appender("logfile").build(LevelFilter::Info));
+
+    let _ = log4rs::init_config(config.unwrap());
+
     let ttf_context = sdl2::ttf::init().unwrap();
     let gss = GfxSubsystem::new(&ttf_context);
 
@@ -36,7 +52,7 @@ pub fn main() -> Result<(), String> {
         .map_err(|e| e.to_string())?;
 
     let mut fps_manager: FPSManager = FPSManager::new();
-    fps_manager.set_framerate(60)?;
+    fps_manager.set_framerate(1)?;
     let r: Region = Region::new(
         Vector2::new(0.0, 0.0),
         Vector2::new(SCREEN_SIZE.x as f32, SCREEN_SIZE.y as f32),
@@ -95,7 +111,7 @@ pub fn main() -> Result<(), String> {
             0,
             1_000_000_000u32 / fps_manager.get_framerate() as u32,
         ));
-        boid_manager.update();
+        //boid_manager.update();
     }
 
     Ok(())

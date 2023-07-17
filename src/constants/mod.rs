@@ -2,15 +2,12 @@ use std::{fmt, str::FromStr};
 
 use crate::{
     logic::behaviour::traits::BorderBehaviourE,
-    math::{
-        quadtree::region::Region,
-        vec::{V2u32, Vector2},
-    },
+    math::vec::{V2u32, Vector2},
 };
 
 pub const SCREEN_SIZE: V2u32 = Vector2::new(800, 600);
 pub const BOID_SIZE: i16 = 4;
-pub const VIEW_DISTANCE: f32 = BOID_SIZE as f32 * 10.0 as f32;
+pub const VIEW_DISTANCE: f32 = 0.1; //BOID_SIZE as f32 * 10.0 as f32;
 
 use std::cell::RefCell;
 thread_local!(pub static DRAW_VIEW: RefCell<bool> = RefCell::new(false));
@@ -25,8 +22,8 @@ pub const ALLIGN_FACTOR: f32 = 0.3;
 pub const COHESION_FACTOR: f32 = 0.1;
 pub const SEPERATE_FACTOR: f32 = 0.39;
 pub const UPDATE_EVERY_TICK: u8 = 1;
-pub const BOIDS_AMOUNT: u64 = 100;
-pub const MAX_BOID_IN_AREA: usize = (BOIDS_AMOUNT as usize * 10) / 100 as usize;
+pub const BOIDS_AMOUNT: u64 = 1;
+pub const MAX_BOID_IN_AREA: usize = (BOIDS_AMOUNT as usize * 10) / 100 as usize + 1;
 
 use bitflags::bitflags;
 
@@ -41,7 +38,7 @@ bitflags! {
     }
 }
 
-pub static mut BEHAVIOUR_ENABLED: BehaviourEnabled = BehaviourEnabled::ALL_ENABLED;
+pub static mut BEHAVIOUR_ENABLED: BehaviourEnabled = BehaviourEnabled::SEPERATE;
 
 impl fmt::Display for BehaviourEnabled {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -58,23 +55,23 @@ impl FromStr for BehaviourEnabled {
 }
 
 pub struct IdIterator {
-    i: u64,
+    i: usize,
 }
 
 impl IdIterator {
-    const MAX_VALUE: u64 = u64::MAX;
-    pub fn get_next(&mut self) -> u64 {
+    const MAX_VALUE: usize = usize::MAX;
+    pub fn get_next(&mut self) -> usize {
         if self.i + 1 == Self::MAX_VALUE {
             self.i = 0;
         }
+        let id = self.i;
         self.i += 1;
-        return self.i;
+        return id;
     }
     pub fn new() -> Self {
         Self { i: 0 }
     }
 }
-thread_local!(pub static AREA_ID_ITERATOR: RefCell<IdIterator> = RefCell::new(IdIterator::new()));
 thread_local!(pub static BOID_ID_ITERATOR: RefCell<IdIterator> = RefCell::new(IdIterator::new()));
 
 pub mod types;
