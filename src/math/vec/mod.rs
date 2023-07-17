@@ -241,6 +241,18 @@ macro_rules! vect_impl {
                 Self::new(x, y)
             }
         }
+        impl Add<$t> for Vector2<$t>
+        where
+            $t: Add<Output = $t> + Default + Mul + Sub + SampleUniform + PartialOrd + Copy,
+        {
+            type Output = Vector2<$t>;
+
+            fn add(self, rhs: $t) -> Self::Output {
+                let x = self.x + rhs;
+                let y = self.y + rhs;
+                Self::new(x, y)
+            }
+        }
         impl Div<Vector2<$t>> for Vector2<$t>
         where
             $t: Add<Output = $t>

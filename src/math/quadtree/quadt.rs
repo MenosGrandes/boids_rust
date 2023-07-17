@@ -6,7 +6,7 @@ use crate::logic::boid::boid_impl::Boid;
 use crate::{graphics::renderer::Renderable, math::vec::random_color};
 
 use super::region::Region;
-use super::traits::SubInto;
+use super::traits::{Intersect, SubInto};
 
 use sdl2::rect::Rect;
 macro_rules! rect(
@@ -126,6 +126,30 @@ impl QuadTree {
                 let _ = mem::replace(self, new);
             }
             _ => {}
+        }
+    }
+    pub fn get_all_boids_in_boundry(&self, query_boundry: &Region, found_boids: &mut Vec<Boid>) {
+        match self {
+            QuadTree::Leaf {
+                id: _,
+                boundary,
+                boids,
+            } => {
+                if !query_boundry.intersect_with(boundary) {
+                    return;
+                }
+                for b in boids {
+                    if boundary.contains_boid(b) {
+                        found_boids.push(*b);
+                    }
+                }
+            }
+
+            QuadTree::Root { neighbours } => {
+                for n in neighbours {
+                    n.get_all_boids_in_boundry(query_boundry, found_boids);
+                }
+            }
         }
     }
 }

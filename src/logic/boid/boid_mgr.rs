@@ -1,7 +1,7 @@
 use sdl2::render::WindowCanvas;
 
 use crate::{
-    constants::{types::AreaId, SCREEN_SIZE},
+    constants::{types::AreaId, SCREEN_SIZE, VIEW_DISTANCE},
     graphics::renderer::Renderable,
     logic::behaviour::traits::{AlignBehaviour, Behaviour, CohesionBehaviour, SeperateBehaviour},
     math::{
@@ -89,16 +89,16 @@ impl BoidManager {
     }
 
     fn update_boids_in_quad_tree(&mut self) {
-        let mut other_visible_boids: Vec<BoidInArea> = Vec::new();
+        for current_boid_id in 0..self.boids.len() {
+            let mut other_visible_boids: Vec<Boid> = Vec::new();
+            let region: Region = Region::rect_from_center(self.boids[current_boid_id].position, VIEW_DISTANCE);
+            self.quad_tree
+                .get_all_boids_in_boundry(&region, &mut other_visible_boids);
 
-        self.update_boids_in_region(&self.quad_tree, &mut other_visible_boids);
-
-        for boids_and_area in other_visible_boids {
-            for boid in &boids_and_area.boids {
-                let mut b_copy = boid.clone();
-                //let other_visible_boids = boid.get_other_visible(&boids_and_area.boids);
+            for b in &other_visible_boids {
+                let mut b_copy = b.clone();
                 for behaviour in &self.behaviours {
-                    b_copy.acceleration += behaviour.calculate(&b_copy, &boids_and_area.boids);
+                    b_copy.acceleration += behaviour.calculate(&b_copy, &other_visible_boids);
                 }
                 b_copy.update();
                 self.boids[b_copy.id as usize - 1] = b_copy;
@@ -110,6 +110,8 @@ impl Renderable for BoidManager {
     fn render(&mut self, canvas: &mut WindowCanvas) -> Result<(), String> {
         for b in self.boids.iter_mut() {
             b.render(canvas)?;
+            let mut region: Region = Region::rect_from_center(b.position, VIEW_DISTANCE);
+            region.render(canvas)?;
         }
         self.quad_tree.render(canvas)?;
         Ok(())

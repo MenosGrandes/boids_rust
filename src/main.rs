@@ -36,7 +36,7 @@ pub fn main() -> Result<(), String> {
         .map_err(|e| e.to_string())?;
 
     let mut fps_manager: FPSManager = FPSManager::new();
-    fps_manager.set_framerate(120)?;
+    fps_manager.set_framerate(60)?;
     let r: Region = Region::new(
         Vector2::new(0.0, 0.0),
         Vector2::new(SCREEN_SIZE.x as f32, SCREEN_SIZE.y as f32),
@@ -95,7 +95,7 @@ pub fn main() -> Result<(), String> {
             0,
             1_000_000_000u32 / fps_manager.get_framerate() as u32,
         ));
-        //boid_manager.update();
+        boid_manager.update();
     }
 
     Ok(())

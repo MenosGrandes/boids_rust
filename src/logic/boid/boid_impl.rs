@@ -13,7 +13,7 @@ use crate::{
     },
     graphics::renderer::Renderable,
     logic::behaviour::traits::BorderBehaviour,
-    math::vec::V2f32,
+    math::{vec::V2f32, quadtree::region::Region},
 };
 
 #[derive(PartialEq, Copy, Clone, Debug)]
@@ -50,13 +50,13 @@ impl Boid {
         canvas.set_draw_color(self.color.as_rgba());
         DRAW_VIEW.with(|value: &std::cell::RefCell<bool>| {
             if *value.borrow() {
-                let r = Rect::new(
-                    (self.position.x as i32 - (VIEW_DISTANCE / 2.0) as i32) as i32,
-                    (self.position.y as i32 - (VIEW_DISTANCE / 2.0) as i32) as i32,
-                    (VIEW_DISTANCE) as u32,
-                    (VIEW_DISTANCE) as u32,
+                let r = Region::rect_from_center(self.position, VIEW_DISTANCE);
+                let rect = Rect::new(
+                    r.left_up.x as i32, r.left_up.y as i32,
+                    r.width_height.x as u32,
+                    r.width_height.y as u32,
                 );
-                let _ = canvas.draw_rect(r);
+                let _ = canvas.draw_rect(rect);
             }
         });
         canvas.filled_circle(

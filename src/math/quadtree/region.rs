@@ -26,6 +26,17 @@ impl Default for Region {
 }
 
 impl Region {
+    pub fn rect_from_center(center : V2f32, view_distance : f32) -> Self
+    {
+
+        let przekatna = (view_distance * f32::sqrt(2.0) ) /2.0;
+        Self
+        {
+            left_up: center - przekatna/2.0 ,
+            right_down : center + przekatna/2.0 ,
+            width_height: V2f32::new(przekatna,przekatna)
+        }
+    }
     pub fn new(left_up: V2f32, right_down: V2f32) -> Self {
         let height = right_down.y - left_up.y;
         let width = right_down.x - left_up.x;
@@ -34,7 +45,7 @@ impl Region {
             right_down,
             width_height: V2f32::new(width, height),
         }
-}
+    }
     pub fn is_empty(&self) -> bool {
         return self.width_height.x == 0.0 || self.width_height.y == 0.0;
     }
@@ -95,14 +106,14 @@ impl SubInto for Region {
 }
 impl Intersect for Region {
     fn intersect_with(&self, other: &Self) -> bool {
-        println!("{:?} ", &self);
-        println!("{:?} ",  other);
         if self.is_empty() || other.is_empty() {
             return false;
         }
 
-        return self.left_up.x <= (other.right_down.x ) && (self.right_down.x) >= other.left_up.x &&
-               self.left_up.y <= (other.right_down.y) && (self.right_down.y) >= other.left_up.y;
+        return self.left_up.x <= (other.right_down.x)
+            && (self.right_down.x) >= other.left_up.x
+            && self.left_up.y <= (other.right_down.y)
+            && (self.right_down.y) >= other.left_up.y;
     }
 }
 #[test]
@@ -115,35 +126,31 @@ fn empty_region() {
 
 #[test]
 fn region_intersects() {
-        println!("ANOTHER 0");
-        let r_1 = Region::new(V2f32::new(0.0, 0.0), V2f32::new(200.0, 200.0));
-        let r_2 = Region::new(V2f32::new(199.0, 100.0), V2f32::new(340.0, 600.0));
-        assert_eq!(r_1.intersect_with(&r_2), true);
-        assert_eq!(r_2.intersect_with(&r_1), true);
-    }
+    let r_1 = Region::new(V2f32::new(0.0, 0.0), V2f32::new(200.0, 200.0));
+    let r_2 = Region::new(V2f32::new(199.0, 100.0), V2f32::new(340.0, 600.0));
+    assert_eq!(r_1.intersect_with(&r_2), true);
+    assert_eq!(r_2.intersect_with(&r_1), true);
+}
 
 #[test]
 fn region_intersects_1() {
-        println!("ANOTHER 1");
-        let r_1 = Region::new(V2f32::new(0.0, 0.0), V2f32::new(200.0, 200.0));
-        let  r_2 = Region::new(V2f32::new(100.0, 100.0), V2f32::new(340.0, 600.0));
-        assert_eq!(r_1.intersect_with(&r_2),true);
-        assert_eq!(r_2.intersect_with(&r_1),true);
-    }
+    let r_1 = Region::new(V2f32::new(0.0, 0.0), V2f32::new(200.0, 200.0));
+    let r_2 = Region::new(V2f32::new(100.0, 100.0), V2f32::new(340.0, 600.0));
+    assert_eq!(r_1.intersect_with(&r_2), true);
+    assert_eq!(r_2.intersect_with(&r_1), true);
+}
 
 #[test]
 fn region_intersects_2() {
-        println!("ANOTHER 2");
-        let r_1 = Region::new(V2f32::new(0.0, 0.0), V2f32::new(200.0, 200.0));
-        let  r_2 = Region::new(V2f32::new(300.0, 100.0), V2f32::new(340.0, 600.0));
-        assert_eq!(r_1.intersect_with(&r_2), false);
-        assert_eq!(r_2.intersect_with(&r_1), false);
-    }
+    let r_1 = Region::new(V2f32::new(0.0, 0.0), V2f32::new(200.0, 200.0));
+    let r_2 = Region::new(V2f32::new(300.0, 100.0), V2f32::new(340.0, 600.0));
+    assert_eq!(r_1.intersect_with(&r_2), false);
+    assert_eq!(r_2.intersect_with(&r_1), false);
+}
 #[test]
 fn region_intersects_3() {
-        println!("ANOTHER 3");
-        let r_1 = Region::new(V2f32::new(0.0, 0.0), V2f32::new(200.0, 200.0));
-        let r_2 = Region::new(V2f32::new(0.0, 201.0), V2f32::new(340.0, 600.0));
-        assert_eq!(r_1.intersect_with(&r_2), false);
-        assert_eq!(r_2.intersect_with(&r_1), false);
-    }
+    let r_1 = Region::new(V2f32::new(0.0, 0.0), V2f32::new(200.0, 200.0));
+    let r_2 = Region::new(V2f32::new(0.0, 201.0), V2f32::new(340.0, 600.0));
+    assert_eq!(r_1.intersect_with(&r_2), false);
+    assert_eq!(r_2.intersect_with(&r_1), false);
+}
