@@ -3,9 +3,7 @@ use sdl2::render::WindowCanvas;
 use crate::{
     constants::{types::AreaId, SCREEN_SIZE},
     graphics::renderer::Renderable,
-    logic::behaviour::traits::{
-        AlignBehaviour, Behaviour, CohesionBehaviour, SeperateBehaviour,
-    },
+    logic::behaviour::traits::{AlignBehaviour, Behaviour, CohesionBehaviour, SeperateBehaviour},
     math::{
         quadtree::{quadt::QuadTree, region::Region},
         vec::{random_color, Magnitude, V2usize, Vector2},
@@ -46,7 +44,7 @@ impl BoidManager {
         }
     }
 
-    pub fn add_boid(&mut self, amount: i16) {
+    pub fn add_boid(&mut self, amount: u64) {
         for _ in 0..amount {
             let mut c = Vector2::random(-1.0, 1.0); //
             c.set_magnitude(2.0);
@@ -61,7 +59,7 @@ impl BoidManager {
             ));
         }
     }
-    pub fn spawn_boid(&mut self, amount: i16) {
+    pub fn spawn_boid(&mut self, amount: u64) {
         self.boids = Vec::with_capacity(amount as usize);
         self.add_boid(amount);
     }
@@ -96,7 +94,6 @@ impl BoidManager {
         self.update_boids_in_region(&self.quad_tree, &mut other_visible_boids);
 
         for boids_and_area in other_visible_boids {
-
             for boid in &boids_and_area.boids {
                 let mut b_copy = boid.clone();
                 //let other_visible_boids = boid.get_other_visible(&boids_and_area.boids);
@@ -128,18 +125,19 @@ impl Default for BoidManager {
 impl Updatable for BoidManager {
     fn update(&mut self) {
         if self.update_tick == crate::constants::UPDATE_EVERY_TICK {
-            let r: Region = Region::new(
-                V2usize::new(0, 0),
-                V2usize::new(SCREEN_SIZE.x as usize, SCREEN_SIZE.y as usize),
+            let scren_size_region: Region = Region::new(
+                Vector2::new(0.0, 0.0),
+                Vector2::new(SCREEN_SIZE.x as f32, SCREEN_SIZE.y as f32),
             );
-            self.quad_tree = QuadTree::new(r.clone());
+            self.quad_tree = QuadTree::new(scren_size_region);
+            let mut len = 0;
             for b in self.boids.iter_mut() {
-                let area_id = self.quad_tree.insert(*b);
+                let area_id = self.quad_tree.insert(*b, &mut len);
                 match area_id {
                     Ok(id) => {
                         b.area_id = id;
                     }
-                    Err(err) => panic!("{}", err),
+                    Err(err) => panic!("{} {}", err, len),
                 }
             }
             self.update_tick = 0;

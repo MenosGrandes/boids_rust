@@ -9,12 +9,14 @@ extern crate sdl2;
 
 use std::time::Duration;
 
-use constants::{BehaviourEnabled, BEHAVIOUR_ENABLED, BORDER_BEHAVIOUR, DRAW_VIEW, SCREEN_SIZE};
+use constants::{
+    BehaviourEnabled, BEHAVIOUR_ENABLED, BOIDS_AMOUNT, BORDER_BEHAVIOUR, DRAW_VIEW, SCREEN_SIZE,
+};
 use graphics::renderer::{GfxSubsystem, RendererManager};
 use logic::behaviour::traits::BorderBehaviourE;
 use logic::boid::boid_mgr::BoidManager;
 use math::quadtree::region::Region;
-use math::vec::V2usize;
+use math::vec::{V2usize, Vector2};
 use sdl2::event::Event;
 use sdl2::gfx::framerate::FPSManager;
 use sdl2::keyboard::Keycode;
@@ -36,11 +38,11 @@ pub fn main() -> Result<(), String> {
     let mut fps_manager: FPSManager = FPSManager::new();
     fps_manager.set_framerate(120)?;
     let r: Region = Region::new(
-        V2usize::new(0, 0),
-        V2usize::new(SCREEN_SIZE.x as usize, SCREEN_SIZE.y as usize),
+        Vector2::new(0.0, 0.0),
+        Vector2::new(SCREEN_SIZE.x as f32, SCREEN_SIZE.y as f32),
     );
     let mut boid_manager = BoidManager::new(r);
-    boid_manager.spawn_boid(10000);
+    boid_manager.spawn_boid(BOIDS_AMOUNT);
     let mut event_pump = gss.sdl_context.event_pump()?;
     let mut renderer = RendererManager::new(window, gss)?;
 
@@ -93,7 +95,7 @@ pub fn main() -> Result<(), String> {
             0,
             1_000_000_000u32 / fps_manager.get_framerate() as u32,
         ));
-        boid_manager.update();
+        //boid_manager.update();
     }
 
     Ok(())

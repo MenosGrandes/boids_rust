@@ -8,8 +8,8 @@ use sdl2::{
 use super::traits::*;
 use crate::{
     constants::{
-        types::{AreaId, BoidId}, BOID_ID_ITERATOR, BOID_SIZE, BORDER_BEHAVIOUR, DRAW_VIEW,
-        MAX_BOID_FORCE, VIEW_DISTANCE,
+        types::{AreaId, BoidId},
+        BOID_ID_ITERATOR, BOID_SIZE, BORDER_BEHAVIOUR, DRAW_VIEW, MAX_BOID_FORCE, VIEW_DISTANCE,
     },
     graphics::renderer::Renderable,
     logic::behaviour::traits::BorderBehaviour,

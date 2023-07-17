@@ -1,11 +1,12 @@
 use std::mem;
 
-use crate::constants::types::{AreaId};
-use crate::constants::{AREA_ID_ITERATOR};
+use crate::constants::types::AreaId;
+use crate::constants::{AREA_ID_ITERATOR, MAX_BOID_IN_AREA};
 use crate::logic::boid::boid_impl::Boid;
 use crate::{graphics::renderer::Renderable, math::vec::random_color};
 
-use super::region::{Region, SubInto};
+use super::region::Region;
+use super::traits::SubInto;
 
 use sdl2::rect::Rect;
 macro_rules! rect(
@@ -52,8 +53,6 @@ impl Renderable for QuadTree {
     }
 }
 impl QuadTree {
-    const MAX_CAPACITY: usize = 20;
-
     pub fn new(boundary: Region) -> Self {
         QuadTree::Leaf {
             boundary,
@@ -73,18 +72,19 @@ impl QuadTree {
         }
     }
 
-    pub fn insert(&mut self, boid: Boid) -> Result<AreaId, &str> {
+    pub fn insert(&mut self, boid: Boid, len: &mut usize) -> Result<AreaId, String> {
         match self {
             QuadTree::Leaf {
                 boundary,
                 boids,
                 id,
             } => {
-                if !boundary.contains(&boid) {
-                    return Err("Boundary doesn't contain boid");
-                } else if boids.len() == QuadTree::MAX_CAPACITY {
+                if !boundary.contains_boid(&boid) {
+                    return Err("Boundary doesn't contain boid".to_string());
+                } else if boids.len() == MAX_BOID_IN_AREA {
+                    *len = boids.len() + *len;
                     self.subdivide();
-                    return self.insert(boid);
+                    return self.insert(boid, len);
                 } else {
                     boids.push(boid);
                     return Ok(*id);
@@ -92,12 +92,12 @@ impl QuadTree {
             }
             QuadTree::Root { neighbours } => {
                 for n in neighbours {
-                    let ok = n.insert(boid);
+                    let ok = n.insert(boid, len);
                     if ok.is_ok() {
                         return ok;
                     }
                 }
-                return Err("Boid couldn't be inserted in any sub-tree");
+                return Err(format!("Boid couldn't be inserted in any sub-tree {}", len));
             }
         }
     }
@@ -119,8 +119,9 @@ impl QuadTree {
                     .unwrap();
 
                 let mut new = QuadTree::Root { neighbours: nei };
+                let mut len = 0;
                 for p in points {
-                    new.insert(*p).unwrap();
+                    new.insert(*p, &mut len).unwrap();
                 }
                 let _ = mem::replace(self, new);
             }

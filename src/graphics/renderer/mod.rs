@@ -1,5 +1,7 @@
 use crate::constants::{BEHAVIOUR_ENABLED, SCREEN_SIZE};
 use crate::logic::boid::boid_mgr::BoidManager;
+use crate::math::quadtree::region::Region;
+use crate::math::vec::V2f32;
 
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;

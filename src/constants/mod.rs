@@ -2,7 +2,10 @@ use std::{fmt, str::FromStr};
 
 use crate::{
     logic::behaviour::traits::BorderBehaviourE,
-    math::vec::{V2u32, Vector2},
+    math::{
+        quadtree::region::Region,
+        vec::{V2u32, Vector2},
+    },
 };
 
 pub const SCREEN_SIZE: V2u32 = Vector2::new(800, 600);
@@ -22,6 +25,8 @@ pub const ALLIGN_FACTOR: f32 = 0.3;
 pub const COHESION_FACTOR: f32 = 0.1;
 pub const SEPERATE_FACTOR: f32 = 0.39;
 pub const UPDATE_EVERY_TICK: u8 = 1;
+pub const BOIDS_AMOUNT: u64 = 100;
+pub const MAX_BOID_IN_AREA: usize = (BOIDS_AMOUNT as usize * 10) / 100 as usize;
 
 use bitflags::bitflags;
 
