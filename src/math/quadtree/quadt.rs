@@ -1,14 +1,14 @@
 use std::mem;
 
-use crate::constants::{BOID_SIZE, MAX_BOID_IN_AREA, VIEW_DISTANCE, QUAD_TREE_COLOR};
+use crate::constants::{MAX_BOID_IN_AREA, QUAD_TREE_COLOR};
 use crate::logic::boid::boid_impl::Boid;
-use crate::math::vec::Vector2;
-use crate::{graphics::renderer::Renderable, math::vec::random_color};
+
+use crate::{graphics::renderer::Renderable};
 
 use super::region::Region;
 use super::traits::{Intersect, SubInto};
 
-use sdl2::pixels::Color;
+
 use sdl2::rect::Rect;
 macro_rules! rect(
     ($x:expr, $y:expr, $w:expr, $h:expr) => (
@@ -116,10 +116,8 @@ impl QuadTree {
                 if !query_boundry.intersect_with(boundary) {
                     return;
                 }
-                log::info!("boundry = {:?}", boundary);
                 for b in boids {
-                    if boundary.contains_boid(b) {
-                        log::info!("Push {:?}", b);
+                    if query_boundry.contains_boid(b) {
                         found_boids.push(*b);
                     }
                 }

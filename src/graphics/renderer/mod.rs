@@ -1,7 +1,7 @@
-use crate::constants::{BEHAVIOUR_ENABLED, SCREEN_SIZE};
+use crate::constants::{SCREEN_SIZE, BEHAVIOUR_ENABLED};
 use crate::logic::boid::boid_mgr::BoidManager;
-use crate::math::quadtree::region::Region;
-use crate::math::vec::V2f32;
+
+
 
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
@@ -64,11 +64,7 @@ impl<'ttf, 'b> RendererManager<'ttf, 'b> {
         self.canvas.clear();
 
         boid_manager.render(&mut self.canvas)?;
-        /*
-                for b in  boid_manager.boids{
-                    b.draw_boid(&mut self.canvas)?;
-                }
-                quad_tree.render(&mut self.canvas)?;
+        
 
         unsafe {
             if !BEHAVIOUR_ENABLED.is_empty() {
@@ -77,7 +73,7 @@ impl<'ttf, 'b> RendererManager<'ttf, 'b> {
                 self.draw_string((&"NONE").to_string())?;
             }
         }
-        */
+        
 
         self.canvas.present();
         Ok(())

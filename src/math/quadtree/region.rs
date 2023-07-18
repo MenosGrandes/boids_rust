@@ -2,7 +2,7 @@ use crate::{
     graphics::renderer::Renderable,
     logic::boid::boid_impl::Boid,
     math::quadtree::traits::SubInto,
-    math::vec::{random_color, V2f32, V2usize, Vector2}, constants::{VIEW_DISTANCE, REGION_COLOR},
+    math::vec::{V2f32, Vector2}, constants::{VIEW_DISTANCE, REGION_COLOR},
 };
 use sdl2::rect::Rect;
 

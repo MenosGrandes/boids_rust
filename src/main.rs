@@ -15,13 +15,14 @@ use constants::{
 use graphics::renderer::{GfxSubsystem, RendererManager};
 use logic::behaviour::traits::BorderBehaviourE;
 use logic::boid::boid_mgr::BoidManager;
+use logic::boid::traits::Updatable;
 use math::quadtree::region::Region;
-use math::vec::{V2usize, Vector2};
+use math::vec::{Vector2};
 use sdl2::event::Event;
 use sdl2::gfx::framerate::FPSManager;
 use sdl2::keyboard::Keycode;
 
-use crate::logic::boid::traits::Updatable;
+
 
 use log::LevelFilter;
 use log4rs::append::file::FileAppender;
@@ -52,7 +53,7 @@ pub fn main() -> Result<(), String> {
         .map_err(|e| e.to_string())?;
 
     let mut fps_manager: FPSManager = FPSManager::new();
-    fps_manager.set_framerate(1)?;
+    fps_manager.set_framerate(100)?;
 
     let r: Region = Region::new(
         Vector2::new(0.0, 0.0),
@@ -108,11 +109,11 @@ pub fn main() -> Result<(), String> {
             }
         }
         renderer.draw(&mut boid_manager)?;
+        boid_manager.update();
         ::std::thread::sleep(Duration::new(
             0,
             1_000_000_000u32 / fps_manager.get_framerate() as u32,
         ));
-        //boid_manager.update();
     }
 
     Ok(())

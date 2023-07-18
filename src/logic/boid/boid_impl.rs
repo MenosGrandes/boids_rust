@@ -1,6 +1,5 @@
 use sdl2::{
-    gfx::primitives::{DrawRenderer, ToColor},
-    pixels::Color,
+    gfx::primitives::{DrawRenderer},
     rect::Rect,
     render::WindowCanvas,
 };
@@ -8,12 +7,12 @@ use sdl2::{
 use super::traits::*;
 use crate::{
     constants::{
-        types::{AreaId, BoidId},
-        BOID_ID_ITERATOR, BOID_SIZE, BORDER_BEHAVIOUR, DRAW_VIEW, MAX_BOID_FORCE, VIEW_DISTANCE, BOID_COLOR,
+        types::{BoidId},
+        BOID_ID_ITERATOR, BOID_SIZE, BORDER_BEHAVIOUR, DRAW_VIEW, MAX_BOID_FORCE, BOID_COLOR, VIEW_COLOR,
     },
     graphics::renderer::Renderable,
     logic::behaviour::traits::BorderBehaviour,
-    math::{quadtree::region::Region, vec::{V2f32, random_color}},
+    math::{quadtree::region::Region, vec::{V2f32}},
 };
 
 #[derive(PartialEq, Copy, Clone)]
@@ -46,6 +45,7 @@ impl Boid {
         canvas.set_draw_color(BOID_COLOR);
         DRAW_VIEW.with(|value: &std::cell::RefCell<bool>| {
             if *value.borrow() {
+                canvas.set_draw_color(VIEW_COLOR);
                 let r = Region::rect_from_center(self.position);
                 let _ = canvas.draw_rect(Rect::from(r));
             }

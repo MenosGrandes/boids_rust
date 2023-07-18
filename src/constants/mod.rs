@@ -7,22 +7,21 @@ use crate::{
 
 pub const SCREEN_SIZE: V2u32 = Vector2::new(800, 600);
 pub const BOID_SIZE: i16 = 4;
-pub const VIEW_DISTANCE: f32 = 0.1; //BOID_SIZE as f32 * 10.0 as f32;
+pub const VIEW_DISTANCE: f32 = BOID_SIZE as f32 * 20.0 as f32;
 
 use std::cell::RefCell;
 thread_local!(pub static DRAW_VIEW: RefCell<bool> = RefCell::new(false));
 
 thread_local!(pub static BORDER_BEHAVIOUR: RefCell<BorderBehaviourE> = RefCell::new(BorderBehaviourE::GoThrough));
 
-//pub static mut BORDER_BEHAVIOUR: BorderBehaviourE = BorderBehaviourE::Reflect;
-pub const MAX_BOID_SPEED: f32 = 3.0;
+pub const MAX_BOID_SPEED: f32 = 5.0;
 pub const MAX_BOID_FORCE: f32 = 0.2;
 
-pub const ALLIGN_FACTOR: f32 = 0.3;
+pub const ALLIGN_FACTOR: f32 = 0.1;
 pub const COHESION_FACTOR: f32 = 0.1;
-pub const SEPERATE_FACTOR: f32 = 0.39;
+pub const SEPERATE_FACTOR: f32 = 0.1;
 pub const UPDATE_EVERY_TICK: u8 = 1;
-pub const BOIDS_AMOUNT: u64 = 1;
+pub const BOIDS_AMOUNT: u64 = 1000;
 pub const MAX_BOID_IN_AREA: usize = (BOIDS_AMOUNT as usize * 10) / 100 as usize + 1;
 
 use bitflags::bitflags;
@@ -39,7 +38,7 @@ bitflags! {
     }
 }
 
-pub static mut BEHAVIOUR_ENABLED: BehaviourEnabled = BehaviourEnabled::SEPERATE;
+pub static mut BEHAVIOUR_ENABLED: BehaviourEnabled = BehaviourEnabled::ALL_ENABLED;
 
 impl fmt::Display for BehaviourEnabled {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
