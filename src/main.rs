@@ -53,6 +53,7 @@ pub fn main() -> Result<(), String> {
 
     let mut fps_manager: FPSManager = FPSManager::new();
     fps_manager.set_framerate(1)?;
+
     let r: Region = Region::new(
         Vector2::new(0.0, 0.0),
         Vector2::new(SCREEN_SIZE.x as f32, SCREEN_SIZE.y as f32),

@@ -1,4 +1,4 @@
-use sdl2::{render::WindowCanvas, pixels::Color};
+use sdl2::{pixels::Color, render::WindowCanvas};
 
 use crate::{
     constants::{BOID_SIZE, SCREEN_SIZE, VIEW_DISTANCE},
@@ -50,7 +50,6 @@ impl BoidManager {
                 ),
                 c,
                 Vector2::new(0.01, 0.01),
-                random_color(),
             ));
         }
     }
@@ -67,9 +66,12 @@ impl BoidManager {
             log::info!("START loopin on boid {:?}", self.boids[boid_id]);
             let mut other_visible_boids: Vec<Boid> = Vec::new();
             let region: Region =
-                Region::rect_from_center(self.boids[boid_id].position, VIEW_DISTANCE);
+                Region::rect_from_center(self.boids[boid_id].position);
             self.quad_tree
                 .get_all_boids_in_boundry(&region, &mut other_visible_boids);
+
+            //There is only one boid in visible, same as the loop is in
+            //No need to do anything.
             if other_visible_boids.len() == 1 {
                 self.boids[boid_id].update();
                 log::info!("END Only one. loopin on boid {:?}", self.boids[boid_id]);
@@ -106,42 +108,38 @@ impl Renderable for BoidManager {
         let mut r = Region::new(Vector2::new(0.0, 0.0), Vector2::new(300.0, 300.0));
         r.render(canvas)?;
 
-    let mut q = QuadTree::new(r.clone());
+        let mut q = QuadTree::new(r.clone());
 
-    let amount = 10;
-    let x = r.right_down.x / amount as f32;
-    let y = r.right_down.y / amount as f32;
-    let mut q = QuadTree::new(r.clone());
-    let mut boids = vec![];
+        let amount = 10;
+        let x = r.right_down.x / amount as f32;
+        let y = r.right_down.y / amount as f32;
+        let mut q = QuadTree::new(r.clone());
+        let mut boids = vec![];
 
-    for i in 0..3{
-        let boid = Boid::new(
-            Vector2::new(
-                i as f32 * x + BOID_SIZE as f32,
-                i as f32 * y + BOID_SIZE as f32,
-            ),
-            Vector2::zero(),
-            Vector2::zero(),
-            Color::RGB(255, 0, 0),
-        );
-        boids.push(boid);
-        let _ = q.insert(boid);
-    }
-    let distance = x;
-    for mut b in boids
-    {
-        log::info!("START {}", b.id);
-        let mut r = Region::rect_from_center(b.position, distance);
-        let mut boids_in_region = vec![];
-        log::info!("query boundry {:?}", r);
-        q.get_all_boids_in_boundry(&r, &mut boids_in_region);
-        b.render(canvas)?;
-        r.render(canvas)?;
-        log::info!(" boids in region {:?}", boids_in_region);
-        log::info!(" END{}", b.id);
-    }
-    q.render(canvas)?;
-
+        for i in 0..3 {
+            let boid = Boid::new(
+                Vector2::new(
+                    i as f32 * x + BOID_SIZE as f32,
+                    i as f32 * y + BOID_SIZE as f32,
+                ),
+                Vector2::zero(),
+                Vector2::zero(),
+            );
+            boids.push(boid);
+            let _ = q.insert(boid);
+        }
+        for mut b in boids {
+            log::info!("START {}", b.id);
+            let mut r = Region::rect_from_center(b.position);
+            let mut boids_in_region = vec![];
+            log::info!("query boundry {:?}", r);
+            q.get_all_boids_in_boundry(&r, &mut boids_in_region);
+            b.render(canvas)?;
+            r.render(canvas)?;
+            log::info!(" boids in region {:?}", boids_in_region);
+            log::info!(" END{}", b.id);
+        }
+        q.render(canvas)?;
 
         //self.quad_tree.render(canvas)?;
         Ok(())

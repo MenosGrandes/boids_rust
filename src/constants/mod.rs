@@ -26,6 +26,7 @@ pub const BOIDS_AMOUNT: u64 = 1;
 pub const MAX_BOID_IN_AREA: usize = (BOIDS_AMOUNT as usize * 10) / 100 as usize + 1;
 
 use bitflags::bitflags;
+use sdl2::pixels::Color;
 
 bitflags! {
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -73,5 +74,10 @@ impl IdIterator {
     }
 }
 thread_local!(pub static BOID_ID_ITERATOR: RefCell<IdIterator> = RefCell::new(IdIterator::new()));
+
+pub const BOID_COLOR: Color= Color::BLUE;
+pub const REGION_COLOR : Color= Color::WHITE;
+pub const VIEW_COLOR: Color= Color::RED;
+pub const QUAD_TREE_COLOR: Color= Color::YELLOW;
 
 pub mod types;

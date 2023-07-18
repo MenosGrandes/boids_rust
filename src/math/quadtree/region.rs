@@ -2,7 +2,7 @@ use crate::{
     graphics::renderer::Renderable,
     logic::boid::boid_impl::Boid,
     math::quadtree::traits::SubInto,
-    math::vec::{random_color, V2f32, V2usize, Vector2},
+    math::vec::{random_color, V2f32, V2usize, Vector2}, constants::{VIEW_DISTANCE, REGION_COLOR},
 };
 use sdl2::rect::Rect;
 
@@ -26,13 +26,16 @@ impl Default for Region {
 }
 
 impl Region {
-    pub fn rect_from_center(center: V2f32, view_distance: f32) -> Self {
-        let przekatna = (view_distance * f32::sqrt(2.0)) / 2.0;
+    pub fn rect_from_center_with_distance(center: V2f32, view_distance: f32) -> Self {
+        let diagonal = (view_distance * f32::sqrt(2.0)) / 2.0;
         Self {
-            left_up: center - przekatna / 2.0,
-            right_down: center + przekatna / 2.0,
-            width_height: V2f32::new(przekatna, przekatna),
+            left_up: center - diagonal / 2.0,
+            right_down: center + diagonal / 2.0,
+            width_height: V2f32::new(diagonal, diagonal),
         }
+    }
+    pub fn rect_from_center(center: V2f32) -> Self {
+        Region::rect_from_center_with_distance(center, VIEW_DISTANCE)
     }
     pub fn new(left_up: V2f32, right_down: V2f32) -> Self {
         let height = right_down.y - left_up.y;
@@ -56,7 +59,7 @@ impl Region {
 }
 impl Renderable for Region {
     fn render(&mut self, canvas: &mut sdl2::render::WindowCanvas) -> Result<(), String> {
-        canvas.set_draw_color(random_color());
+        canvas.set_draw_color(REGION_COLOR);
         let _ = canvas.draw_rect(rect!(
             self.left_up.x,
             self.left_up.y,
@@ -111,6 +114,29 @@ impl Intersect for Region {
             && (self.right_down.x) >= other.left_up.x
             && self.left_up.y <= (other.right_down.y)
             && (self.right_down.y) >= other.left_up.y;
+    }
+}
+/*
+impl From<Rect> for Region
+{
+    fn from(value: Rect) -> Self {
+        todo!()
+        let przekatna = (view_distance * f32::sqrt(2.0)) / 2.0;
+        Region{
+            left_up: center - przekatna / 2.0,
+            right_down: center + przekatna / 2.0,
+            width_height: V2f32::new(przekatna, przekatna),
+        }
+    }
+}*/
+impl From<Region> for Rect {
+    fn from(value: Region) -> Self {
+        Rect::new(
+            value.left_up.x as i32,
+            value.left_up.y as i32,
+            value.width_height.x as u32,
+            value.width_height.y as u32,
+        )
     }
 }
 #[test]

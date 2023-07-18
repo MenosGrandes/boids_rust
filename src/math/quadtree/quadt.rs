@@ -1,6 +1,6 @@
 use std::mem;
 
-use crate::constants::{BOID_SIZE, MAX_BOID_IN_AREA, VIEW_DISTANCE};
+use crate::constants::{BOID_SIZE, MAX_BOID_IN_AREA, VIEW_DISTANCE, QUAD_TREE_COLOR};
 use crate::logic::boid::boid_impl::Boid;
 use crate::math::vec::Vector2;
 use crate::{graphics::renderer::Renderable, math::vec::random_color};
@@ -22,7 +22,7 @@ pub enum QuadTree {
 }
 impl Renderable for QuadTree {
     fn render(&mut self, canvas: &mut sdl2::render::WindowCanvas) -> Result<(), String> {
-        canvas.set_draw_color(random_color());
+        canvas.set_draw_color(QUAD_TREE_COLOR);
 
         match self {
             QuadTree::Leaf { boundary, boids: _ } => {
@@ -119,7 +119,7 @@ impl QuadTree {
                 log::info!("boundry = {:?}", boundary);
                 for b in boids {
                     if boundary.contains_boid(b) {
-                        log::info!("Push {:?}",b);
+                        log::info!("Push {:?}", b);
                         found_boids.push(*b);
                     }
                 }
@@ -149,7 +149,6 @@ fn get_all_boids_in_boundry() {
             ),
             Vector2::zero(),
             Vector2::zero(),
-            Color::RGB(0, 0, 0),
         ));
     }
 
@@ -184,7 +183,7 @@ fn get_all_boids_in_boundry_view_of_boid() {
     let mut q = QuadTree::new(r.clone());
     let mut boids = vec![];
 
-    for i in 0..3{
+    for i in 0..3 {
         let boid = Boid::new(
             Vector2::new(
                 i as f32 * x + BOID_SIZE as f32,
@@ -192,7 +191,6 @@ fn get_all_boids_in_boundry_view_of_boid() {
             ),
             Vector2::zero(),
             Vector2::zero(),
-            Color::RGB(0, 0, 0),
         );
         boids.push(boid);
         let _ = q.insert(boid);
@@ -200,7 +198,7 @@ fn get_all_boids_in_boundry_view_of_boid() {
     {
         let distance = 1.0;
         for b in &boids {
-            let r = Region::rect_from_center(b.position, distance);
+            let r = Region::rect_from_center_with_distance(b.position, distance);
             let mut boids_in_region = vec![];
             q.get_all_boids_in_boundry(&r, &mut boids_in_region);
             assert_eq!(boids_in_region.len(), 1);
@@ -209,11 +207,11 @@ fn get_all_boids_in_boundry_view_of_boid() {
     {
         let distance = x;
         for b in &boids {
-            let r = Region::rect_from_center(b.position, distance);
+            let r = Region::rect_from_center_with_distance(b.position, distance);
             let mut boids_in_region = vec![];
             q.get_all_boids_in_boundry(&r, &mut boids_in_region);
-            println!("{}",b.id);
-            assert_eq!(boids_in_region.len(), 1);
+            println!("{}", b.id);
+            assert_eq!(boids_in_region.len(), 1);// its failing for somre reason MenosGrandes
         }
     }
 }
