@@ -16,6 +16,7 @@ use num::NumCast;
 pub trait DotProduct<T = Self> {
     type Output;
     fn dot(self, other: Self) -> Self::Output;
+    fn dot_self(self) -> Self::Output;
 }
 pub trait Reflect<T> {
     fn reflect(self, other: Self) -> Self;
@@ -93,6 +94,9 @@ macro_rules! vect_impl {
             type Output = $t;
             fn dot(self, other: Self) -> $t {
                 return (self.x * other.x) + (self.y * other.y);
+            }
+            fn dot_self(self) -> $t {
+                self.x * self.y
             }
         }
 

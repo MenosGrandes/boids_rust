@@ -1,7 +1,5 @@
-use crate::constants::{SCREEN_SIZE, BEHAVIOUR_ENABLED};
+use crate::constants::{BEHAVIOUR_ENABLED, SCREEN_SIZE};
 use crate::logic::boid::boid_mgr::BoidManager;
-
-
 
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
@@ -16,7 +14,7 @@ macro_rules! rect(
 );
 
 pub trait Renderable {
-    fn render(&mut self, canvas: &mut WindowCanvas) -> Result<(), String>;
+    fn render(&mut self, canvas: &mut WindowCanvas);
 }
 
 pub struct Writer<'ttf, 'b> {
@@ -55,30 +53,28 @@ impl<'ttf, 'b> RendererManager<'ttf, 'b> {
     pub fn new(
         window: Window,
         gfx: GfxSubsystem<'ttf, 'b>,
-    ) -> Result<RendererManager<'ttf, 'b>, String> {
-        let canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
-        Ok(RendererManager { canvas, gfx })
+    ) -> RendererManager<'ttf, 'b> {
+        let canvas = window.into_canvas().build().map_err(|e| e.to_string()).unwrap();
+        RendererManager { canvas, gfx }
     }
-    pub fn draw(&mut self, boid_manager: &mut BoidManager) -> Result<(), String> {
+    //MenosGrandes why this isn't render?
+    pub fn draw(&mut self, boid_manager: &mut BoidManager)  {
         self.canvas.set_draw_color(Color::BLACK);
         self.canvas.clear();
 
-        boid_manager.render(&mut self.canvas)?;
-        
+        boid_manager.render(&mut self.canvas);
 
         unsafe {
             if !BEHAVIOUR_ENABLED.is_empty() {
-                self.draw_string(BEHAVIOUR_ENABLED.to_string())?;
+                self.draw_string(BEHAVIOUR_ENABLED.to_string());
             } else {
-                self.draw_string((&"NONE").to_string())?;
+                self.draw_string((&"NONE").to_string());
             }
         }
-        
 
         self.canvas.present();
-        Ok(())
     }
-    pub fn draw_string(&mut self, text: String) -> Result<(), String> {
+    pub fn draw_string(&mut self, text: String){
         let texture_creator = self.canvas.texture_creator();
         // render a surface, and convert it to a texture bound to the canvas
         let surface = self
@@ -87,10 +83,10 @@ impl<'ttf, 'b> RendererManager<'ttf, 'b> {
             .font
             .render(&text)
             .blended(Color::RGBA(255, 0, 0, 255))
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| e.to_string()).unwrap();
         let texture = texture_creator
             .create_texture_from_surface(&surface)
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| e.to_string()).unwrap();
         let TextureQuery { width, height, .. } = texture.query();
 
         let padding = 64;
@@ -101,8 +97,7 @@ impl<'ttf, 'b> RendererManager<'ttf, 'b> {
             SCREEN_SIZE.y - padding,
         );
 
-        self.canvas.copy(&texture, None, Some(target))?;
-        Ok(())
+        let _ = self.canvas.copy(&texture, None, Some(target));
     }
     fn get_centered_rect(
         &self,

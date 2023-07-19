@@ -1,8 +1,9 @@
 use crate::{
+    constants::{REGION_COLOR, VIEW_DISTANCE},
     graphics::renderer::Renderable,
     logic::boid::boid_impl::Boid,
     math::quadtree::traits::SubInto,
-    math::vec::{V2f32, Vector2}, constants::{VIEW_DISTANCE, REGION_COLOR},
+    math::vec::{V2f32, Vector2},
 };
 use sdl2::rect::Rect;
 
@@ -58,7 +59,7 @@ impl Region {
     }
 }
 impl Renderable for Region {
-    fn render(&mut self, canvas: &mut sdl2::render::WindowCanvas) -> Result<(), String> {
+    fn render(&mut self, canvas: &mut sdl2::render::WindowCanvas) {
         canvas.set_draw_color(REGION_COLOR);
         let _ = canvas.draw_rect(rect!(
             self.left_up.x,
@@ -66,7 +67,6 @@ impl Renderable for Region {
             self.width_height.x,
             self.width_height.y
         ));
-        Ok(())
     }
 }
 impl SubInto for Region {
@@ -106,6 +106,7 @@ impl SubInto for Region {
 }
 impl Intersect for Region {
     fn intersect_with(&self, other: &Self) -> bool {
+        #[cfg(debug_assertions)]
         if self.is_empty() || other.is_empty() {
             return false;
         }

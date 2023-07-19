@@ -1,12 +1,12 @@
-use sdl2::{render::WindowCanvas};
+use sdl2::render::WindowCanvas;
 
 use crate::{
-    constants::{BOID_SIZE, SCREEN_SIZE},
+    constants::{BOID_SIZE, SCREEN_SIZE, MAX_BOID_IN_AREA},
     graphics::renderer::Renderable,
     logic::behaviour::traits::{AlignBehaviour, Behaviour, CohesionBehaviour, SeperateBehaviour},
     math::{
         quadtree::{quadt::QuadTree, region::Region},
-        vec::{Magnitude, Vector2},
+        vec::{DotProduct, Magnitude, V2f32, Vector2},
     },
 };
 
@@ -33,17 +33,38 @@ impl BoidManager {
     }
 
     pub fn add_boid(&mut self, amount: u64) {
-        for _ in 0..amount {
+        /*
+        let every = V2f32::new(SCREEN_SIZE.x as f32, SCREEN_SIZE.y as f32) / amount as f32;
+        for i in 0..amount {
+
             let mut c = Vector2::random(-1.0, 1.0); //
             c.set_magnitude(2.0);
             self.boids.push(Boid::new(
+                    /*
                 Vector2::random_from_vec(
                     Vector2::new(0.0, SCREEN_SIZE.x as f32),
                     Vector2::new(0.0, SCREEN_SIZE.y as f32),
-                ),
+                ),*/
+                    Vector2::new(every.x + i as f32, every.y + i as f32),
                 c,
                 Vector2::new(0.01, 0.01),
-            ));
+            ) );
+        }*/
+        let area: f32 = SCREEN_SIZE.dot_self() as f32;
+        let point_area = area / amount as f32;
+        let length = point_area.sqrt() / 2.0;
+        let mut i = length / 2.0 - BOID_SIZE as f32;
+        let mut j = length / 2.0 - BOID_SIZE as f32;
+        while i < SCREEN_SIZE.x as f32 - BOID_SIZE as f32 {
+            while j < SCREEN_SIZE.y as f32 - BOID_SIZE as f32 {
+                let mut c = Vector2::random(-1.0, 1.0); //
+                c.set_magnitude(2.0);
+                self.boids
+                    .push(Boid::new(Vector2::new(i, j), c, Vector2::new(0.01, 0.01)));
+                j += length;
+            }
+            i += length;
+            j = length / 2.0 - BOID_SIZE as f32;
         }
     }
     pub fn spawn_boid(&mut self, amount: u64) {
@@ -56,9 +77,8 @@ impl BoidManager {
 
     fn update_boids_in_quad_tree(&mut self) {
         for boid_id in 0..self.boids.len() {
-            let mut other_visible_boids: Vec<Boid> = Vec::new();
-            let region: Region =
-                Region::rect_from_center(self.boids[boid_id].position);
+            let mut other_visible_boids: Vec<Boid> = Vec::with_capacity(MAX_BOID_IN_AREA);
+            let region: Region = Region::rect_from_center(self.boids[boid_id].position);
             self.quad_tree
                 .get_all_boids_in_boundry(&region, &mut other_visible_boids);
 
@@ -70,25 +90,21 @@ impl BoidManager {
             }
 
             for b in &other_visible_boids {
-                let mut b_copy = b.clone();
                 for behaviour in &self.behaviours {
-                    b_copy.acceleration += behaviour.calculate(&b_copy, &other_visible_boids);
+                self.boids[b.id].acceleration +=behaviour.calculate(&b, &other_visible_boids);
                 }
-                b_copy.update();
-                self.boids[b_copy.id] = b_copy;
+                self.boids[b.id].update();
             }
         }
     }
 }
 impl Renderable for BoidManager {
-    fn render(&mut self, canvas: &mut WindowCanvas) -> Result<(), String> {
-        
+    fn render(&mut self, canvas: &mut WindowCanvas){
         for b in self.boids.iter_mut() {
-            b.render(canvas)?;
+            b.render(canvas);
         }
 
-        self.quad_tree.render(canvas)?;
-        Ok(())
+        self.quad_tree.render(canvas);
     }
 }
 
@@ -107,12 +123,12 @@ impl Updatable for BoidManager {
             );
             self.quad_tree = QuadTree::new(scren_size_region);
             for b in self.boids.iter_mut() {
-                let ok = self.quad_tree.insert(*b);
-                match ok {
-                    Ok(_) => {}
+                match self.quad_tree.insert(*b) {
                     Err(err) => {
+                        log::error!("Panic {} for {:?}, quad_tree = {:?}",err,*b, self.quad_tree);
                         panic!("{}", err)
                     }
+                    _ => {}
                 }
             }
             self.update_tick = 0;

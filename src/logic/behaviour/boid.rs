@@ -25,7 +25,7 @@ impl BorderBehaviour for Boid {
             BorderBehaviourE::Reflect => {
                 if self.position.x > SCREEN_SIZE.x as f32 - (BOID_SIZE as f32) * 3.0 {
                     self.velocity = self.velocity.reflect(Vector2::new(-1.0, 0.0));
-                } else if self.position.x < BOID_SIZE as f32 * 3.0 {
+                } else if self.position.x < BOID_SIZE as f32 * 3.0{
                     self.velocity = self.velocity.reflect(Vector2::new(1.0, 0.0));
                 }
                 if self.position.y > SCREEN_SIZE.y as f32 - (BOID_SIZE as f32) * 3.0 {

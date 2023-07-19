@@ -17,12 +17,10 @@ use logic::behaviour::traits::BorderBehaviourE;
 use logic::boid::boid_mgr::BoidManager;
 use logic::boid::traits::Updatable;
 use math::quadtree::region::Region;
-use math::vec::{Vector2};
+use math::vec::Vector2;
 use sdl2::event::Event;
 use sdl2::gfx::framerate::FPSManager;
 use sdl2::keyboard::Keycode;
-
-
 
 use log::LevelFilter;
 use log4rs::append::file::FileAppender;
@@ -37,7 +35,7 @@ pub fn main() -> Result<(), String> {
 
     let config = Config::builder()
         .appender(Appender::builder().build("logfile", Box::new(logfile.unwrap())))
-        .build(Root::builder().appender("logfile").build(LevelFilter::Info));
+        .build(Root::builder().appender("logfile").build(LevelFilter::Error));
 
     let _ = log4rs::init_config(config.unwrap());
 
@@ -62,7 +60,7 @@ pub fn main() -> Result<(), String> {
     let mut boid_manager = BoidManager::new(r);
     boid_manager.spawn_boid(BOIDS_AMOUNT);
     let mut event_pump = gss.sdl_context.event_pump()?;
-    let mut renderer = RendererManager::new(window, gss)?;
+    let mut renderer = RendererManager::new(window, gss);
 
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -108,8 +106,8 @@ pub fn main() -> Result<(), String> {
                 _ => {}
             }
         }
-        renderer.draw(&mut boid_manager)?;
         boid_manager.update();
+        renderer.draw(&mut boid_manager);
         ::std::thread::sleep(Duration::new(
             0,
             1_000_000_000u32 / fps_manager.get_framerate() as u32,

@@ -1,13 +1,13 @@
 use std::mem;
 
-use crate::constants::{MAX_BOID_IN_AREA, QUAD_TREE_COLOR};
+use crate::constants::{MAX_BOID_IN_AREA, QUAD_TREE_COLOR, BOID_SIZE};
 use crate::logic::boid::boid_impl::Boid;
 
-use crate::{graphics::renderer::Renderable};
+use crate::graphics::renderer::Renderable;
+use crate::math::vec::Vector2;
 
 use super::region::Region;
 use super::traits::{Intersect, SubInto};
-
 
 use sdl2::rect::Rect;
 macro_rules! rect(
@@ -21,7 +21,7 @@ pub enum QuadTree {
     Root { neighbours: [Box<QuadTree>; 4] },
 }
 impl Renderable for QuadTree {
-    fn render(&mut self, canvas: &mut sdl2::render::WindowCanvas) -> Result<(), String> {
+    fn render(&mut self, canvas: &mut sdl2::render::WindowCanvas){
         canvas.set_draw_color(QUAD_TREE_COLOR);
 
         match self {
@@ -35,19 +35,17 @@ impl Renderable for QuadTree {
             }
             QuadTree::Root { neighbours } => {
                 for n in neighbours {
-                    n.render(canvas)?;
+                    n.render(canvas);
                 }
             }
         }
-
-        Ok(())
     }
 }
 impl QuadTree {
     pub fn new(boundary: Region) -> Self {
         QuadTree::Leaf {
             boundary,
-            boids: Vec::new(),
+            boids: Vec::with_capacity(MAX_BOID_IN_AREA),
         }
     }
 
@@ -61,32 +59,43 @@ impl QuadTree {
         }
     }
 
-    pub fn insert(&mut self, boid: Boid) -> Result<(), &str> {
+    pub fn insert(&mut self, boid: Boid) -> Result<(), &'static str> {
+        log::debug!("Insert {:?}", boid);
         match self {
             QuadTree::Leaf { boundary, boids } => {
+                log::info!("its leaf");
                 if !boundary.contains_boid(&boid) {
                     return Err("Boundary doesn't contain boid");
                 } else if boids.len() == MAX_BOID_IN_AREA {
+                    log::debug!("to much boids in area. divide");
                     self.subdivide();
                     return self.insert(boid);
                 } else {
+                    log::info!("its ok. Adding boid!");
                     boids.push(boid);
                     return Ok(());
                 }
             }
             QuadTree::Root { neighbours } => {
+                log::info!("its root!");
+
+                log::info!("loop over neighbours start");
                 for n in neighbours {
+                log::info!("loop over neighbours iterate");
                     let ok = n.insert(boid);
                     if ok.is_ok() {
                         return ok;
                     }
                 }
+                log::info!("loop over neighbours end");
+
                 return Err("Boid couldn't be inserted in any sub-tree ");
             }
         }
     }
 
     fn subdivide(&mut self) {
+        log::debug!("divide area");
         match self {
             QuadTree::Leaf {
                 boundary,
@@ -103,7 +112,7 @@ impl QuadTree {
 
                 let mut new = QuadTree::Root { neighbours: nei };
                 for p in points {
-                    new.insert(*p).unwrap();
+                    let _ = new.insert(*p);
                 }
                 let _ = mem::replace(self, new);
             }
@@ -209,7 +218,7 @@ fn get_all_boids_in_boundry_view_of_boid() {
             let mut boids_in_region = vec![];
             q.get_all_boids_in_boundry(&r, &mut boids_in_region);
             println!("{}", b.id);
-            assert_eq!(boids_in_region.len(), 1);// its failing for somre reason MenosGrandes
+            assert_eq!(boids_in_region.len(), 1); // its failing for somre reason MenosGrandes
         }
     }
 }

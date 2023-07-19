@@ -6,7 +6,7 @@ use crate::{
 };
 
 pub const SCREEN_SIZE: V2u32 = Vector2::new(800, 600);
-pub const BOID_SIZE: i16 = 4;
+pub const BOID_SIZE: i16 = 1;
 pub const VIEW_DISTANCE: f32 = BOID_SIZE as f32 * 20.0 as f32;
 
 use std::cell::RefCell;
@@ -17,9 +17,9 @@ thread_local!(pub static BORDER_BEHAVIOUR: RefCell<BorderBehaviourE> = RefCell::
 pub const MAX_BOID_SPEED: f32 = 5.0;
 pub const MAX_BOID_FORCE: f32 = 0.2;
 
-pub const ALLIGN_FACTOR: f32 = 0.1;
-pub const COHESION_FACTOR: f32 = 0.1;
-pub const SEPERATE_FACTOR: f32 = 0.1;
+pub const ALLIGN_FACTOR: f32 = 0.3;
+pub const COHESION_FACTOR: f32 = 0.3;
+pub const SEPERATE_FACTOR: f32 = 0.3;
 pub const UPDATE_EVERY_TICK: u8 = 1;
 pub const BOIDS_AMOUNT: u64 = 1000;
 pub const MAX_BOID_IN_AREA: usize = (BOIDS_AMOUNT as usize * 10) / 100 as usize + 1;
@@ -74,9 +74,9 @@ impl IdIterator {
 }
 thread_local!(pub static BOID_ID_ITERATOR: RefCell<IdIterator> = RefCell::new(IdIterator::new()));
 
-pub const BOID_COLOR: Color= Color::BLUE;
-pub const REGION_COLOR : Color= Color::WHITE;
-pub const VIEW_COLOR: Color= Color::RED;
-pub const QUAD_TREE_COLOR: Color= Color::YELLOW;
+pub const BOID_COLOR: Color = Color::BLUE;
+pub const REGION_COLOR: Color = Color::WHITE;
+pub const VIEW_COLOR: Color = Color::RED;
+pub const QUAD_TREE_COLOR: Color = Color::YELLOW;
 
 pub mod types;

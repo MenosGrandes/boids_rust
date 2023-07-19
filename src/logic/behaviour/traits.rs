@@ -25,9 +25,6 @@ impl Behaviour for AlignBehaviour {
         if !unsafe { BEHAVIOUR_ENABLED.contains(BehaviourEnabled::ALLIGN) } {
             return V2f32::zero();
         }
-        if other_boids.len() == 1 {
-            return V2f32::zero();
-        }
         //There is only same ID boid in array.
         let mut avarage_velocity: V2f32 = other_boids
             .iter()
@@ -46,9 +43,6 @@ pub struct CohesionBehaviour;
 impl Behaviour for CohesionBehaviour {
     fn calculate(&self, self_boid: &Boid, other_boids: &[Boid]) -> V2f32 {
         if !unsafe { BEHAVIOUR_ENABLED.contains(BehaviourEnabled::COHESION) } {
-            return V2f32::zero();
-        }
-        if other_boids.len() == 1 {
             return V2f32::zero();
         }
         let mut avarage_position: V2f32 = other_boids
@@ -70,9 +64,6 @@ pub struct SeperateBehaviour;
 impl Behaviour for SeperateBehaviour {
     fn calculate(&self, self_boid: &Boid, other_boids: &[Boid]) -> V2f32 {
         if !unsafe { BEHAVIOUR_ENABLED.contains(BehaviourEnabled::SEPERATE) } {
-            return V2f32::zero();
-        }
-        if other_boids.len() == 1 {
             return V2f32::zero();
         }
         let mut avarage_position: V2f32 = other_boids
