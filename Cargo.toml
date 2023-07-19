@@ -11,9 +11,13 @@ rand = "0.8.5"
 num = "0.4.0"
 approx = "0.5.1"
 bitflags = "2.3.3"
-crossbeam = "0.8.2"
 log4rs = "1.2.0"
 log = "0.4.19"
+imgui-sdl2 = "0.15.1"
+imgui = ">=0.8.0, <0.10.0"
+imgui-rs = "1.47.0"
+gl = "0.10.0"
+imgui-opengl-renderer = "0.11.1"
 
 [profile.release]
 incremental = true
