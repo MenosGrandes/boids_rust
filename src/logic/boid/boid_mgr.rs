@@ -1,12 +1,14 @@
 use sdl2::render::WindowCanvas;
 
 use crate::{
-    constants::{BOID_SIZE, SCREEN_SIZE, MAX_BOID_IN_AREA},
+    constants::{DrawPrimitives, DRAW_PRIMITIVES, MAX_BOID_IN_AREA, SCREEN_SIZE},
     graphics::renderer::Renderable,
-    logic::behaviour::traits::{AlignBehaviour, Behaviour, CohesionBehaviour, SeperateBehaviour},
+    logic::behaviour::traits::{
+        AlignBehaviour, Behaviour, BoundBehaviour, CohesionBehaviour, SeperateBehaviour,
+    },
     math::{
         quadtree::{quadt::QuadTree, region::Region},
-        vec::{DotProduct, Magnitude, V2f32, Vector2},
+        vec::{Magnitude, Vector2},
     },
 };
 
@@ -26,6 +28,7 @@ impl BoidManager {
                 Box::new(AlignBehaviour {}),
                 Box::new(SeperateBehaviour {}),
                 Box::new(CohesionBehaviour {}),
+                Box::new(BoundBehaviour {}),
             ],
             quad_tree: QuadTree::new(starting_region),
             update_tick: 0,
@@ -33,38 +36,17 @@ impl BoidManager {
     }
 
     pub fn add_boid(&mut self, amount: u64) {
-        /*
-        let every = V2f32::new(SCREEN_SIZE.x as f32, SCREEN_SIZE.y as f32) / amount as f32;
-        for i in 0..amount {
-
+        for _i in 0..amount {
             let mut c = Vector2::random(-1.0, 1.0); //
             c.set_magnitude(2.0);
             self.boids.push(Boid::new(
-                    /*
                 Vector2::random_from_vec(
                     Vector2::new(0.0, SCREEN_SIZE.x as f32),
                     Vector2::new(0.0, SCREEN_SIZE.y as f32),
-                ),*/
-                    Vector2::new(every.x + i as f32, every.y + i as f32),
+                ),
                 c,
                 Vector2::new(0.01, 0.01),
-            ) );
-        }*/
-        let area: f32 = SCREEN_SIZE.dot_self() as f32;
-        let point_area = area / amount as f32;
-        let length = point_area.sqrt() / 2.0;
-        let mut i = length / 2.0 - BOID_SIZE as f32;
-        let mut j = length / 2.0 - BOID_SIZE as f32;
-        while i < SCREEN_SIZE.x as f32 - BOID_SIZE as f32 {
-            while j < SCREEN_SIZE.y as f32 - BOID_SIZE as f32 {
-                let mut c = Vector2::random(-1.0, 1.0); //
-                c.set_magnitude(2.0);
-                self.boids
-                    .push(Boid::new(Vector2::new(i, j), c, Vector2::new(0.01, 0.01)));
-                j += length;
-            }
-            i += length;
-            j = length / 2.0 - BOID_SIZE as f32;
+            ));
         }
     }
     pub fn spawn_boid(&mut self, amount: u64) {
@@ -91,7 +73,7 @@ impl BoidManager {
 
             for b in &other_visible_boids {
                 for behaviour in &self.behaviours {
-                self.boids[b.id].acceleration +=behaviour.calculate(&b, &other_visible_boids);
+                    self.boids[b.id].acceleration += behaviour.calculate(&b, &other_visible_boids);
                 }
                 self.boids[b.id].update();
             }
@@ -99,12 +81,26 @@ impl BoidManager {
     }
 }
 impl Renderable for BoidManager {
-    fn render(&mut self, canvas: &mut WindowCanvas){
+    fn render(&mut self, canvas: &mut WindowCanvas) {
         for b in self.boids.iter_mut() {
             b.render(canvas);
         }
 
-        self.quad_tree.render(canvas);
+        DRAW_PRIMITIVES.with(|value| {
+            if value.borrow().contains(DrawPrimitives::QUAD_TREE) {
+                self.quad_tree.render(canvas);
+            }
+        });
+
+        DRAW_PRIMITIVES.with(|value| {
+            if value.borrow().contains(DrawPrimitives::BOUND_VIEW) {
+                let mut r: Region = Region::new(
+                    Vector2::new(100.0, 100.0),
+                    Vector2::new((SCREEN_SIZE.x - 100) as f32, (SCREEN_SIZE.y - 100) as f32),
+                );
+                r.render(canvas);
+            }
+        });
     }
 }
 
@@ -124,9 +120,16 @@ impl Updatable for BoidManager {
             self.quad_tree = QuadTree::new(scren_size_region);
             for b in self.boids.iter_mut() {
                 match self.quad_tree.insert(*b) {
-                    Err(err) => {
-                        log::error!("Panic {} for {:?}, quad_tree = {:?}",err,*b, self.quad_tree);
+                    Err(_err) => {
+                        /*
+                        log::error!(
+                            "Panic {} for {:?}, quad_tree = {:?}",
+                            err,
+                            *b,
+                            self.quad_tree
+                        );
                         panic!("{}", err)
+                        */
                     }
                     _ => {}
                 }

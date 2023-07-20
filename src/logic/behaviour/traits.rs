@@ -1,11 +1,10 @@
-use crate::logic::boid::boid_impl::Boid;
-use crate::{
-    constants::{
-        BehaviourEnabled, ALLIGN_FACTOR, BEHAVIOUR_ENABLED, COHESION_FACTOR, MAX_BOID_SPEED,
-        SEPERATE_FACTOR,
-    },
-    math::vec::{Magnitude, V2f32},
+use crate::constants::{
+    BehaviourConsts, BehaviourEnabled, BEHAVIOUR_ENABLED, MAX_BOID_SPEED, SCREEN_SIZE,
 };
+use crate::logic::boid::boid_impl::Boid;
+use crate::math::quadtree::region::Region;
+use crate::math::vec::{Magnitude, V2f32};
+use crate::math::vec::{Normalize, Vector2};
 
 pub enum BorderBehaviourE {
     GoThrough,
@@ -25,17 +24,15 @@ impl Behaviour for AlignBehaviour {
         if !unsafe { BEHAVIOUR_ENABLED.contains(BehaviourEnabled::ALLIGN) } {
             return V2f32::zero();
         }
-        //There is only same ID boid in array.
         let mut avarage_velocity: V2f32 = other_boids
             .iter()
-            .filter(|b| b.id != self_boid.id)
-            .map(|boid| boid.velocity)
+            .map(|boid| boid.velocity.calc_normalize())
             .sum::<V2f32>()
             / (other_boids.len() as f32);
 
         avarage_velocity.set_magnitude(MAX_BOID_SPEED);
         avarage_velocity -= self_boid.velocity;
-        avarage_velocity *= ALLIGN_FACTOR;
+        avarage_velocity *= BehaviourConsts::ALLIGN_FACTOR;
         return avarage_velocity;
     }
 }
@@ -45,17 +42,14 @@ impl Behaviour for CohesionBehaviour {
         if !unsafe { BEHAVIOUR_ENABLED.contains(BehaviourEnabled::COHESION) } {
             return V2f32::zero();
         }
-        let mut avarage_position: V2f32 = other_boids
-            .iter()
-            .filter(|b| b.id != self_boid.id)
-            .map(|boid| boid.position)
-            .sum::<V2f32>()
-            / (other_boids.len() as f32);
+        let mut avarage_position: V2f32 =
+            other_boids.iter().map(|boid| boid.position).sum::<V2f32>()
+                / (other_boids.len() as f32);
 
         avarage_position -= self_boid.position;
         avarage_position.set_magnitude(MAX_BOID_SPEED);
         avarage_position -= self_boid.velocity;
-        avarage_position *= COHESION_FACTOR;
+        avarage_position *= BehaviourConsts::COHESION_FACTOR;
 
         return avarage_position;
     }
@@ -68,18 +62,45 @@ impl Behaviour for SeperateBehaviour {
         }
         let mut avarage_position: V2f32 = other_boids
             .iter()
-            .filter(|b| b.id != self_boid.id)
             .map(|boid| self_boid.position - boid.position)
             .sum::<V2f32>()
             / (other_boids.len() as f32);
 
         avarage_position.set_magnitude(MAX_BOID_SPEED);
         avarage_position -= self_boid.velocity;
-        avarage_position *= SEPERATE_FACTOR;
+        avarage_position *= BehaviourConsts::SEPERATE_FACTOR;
 
         return avarage_position;
     }
 }
-pub trait SeeBehaviour {
-    fn get_other_visible(self, other: &[Boid]) -> Vec<Boid>;
+
+pub struct BoundBehaviour;
+impl Behaviour for BoundBehaviour {
+    fn calculate(&self, self_boid: &Boid, _other_boids: &[Boid]) -> V2f32 {
+        if !unsafe { BEHAVIOUR_ENABLED.contains(BehaviourEnabled::BOUND) } {
+            return V2f32::zero();
+        }
+
+        let r: Region = Region::new(
+            Vector2::new(100.0, 100.0),
+            Vector2::new((SCREEN_SIZE.x - 100) as f32, (SCREEN_SIZE.y - 100) as f32),
+        );
+        let turnfactor = 0.25;
+        let x = if self_boid.position.x < r.left_up.x {
+            turnfactor
+        } else if self_boid.position.x > r.right_down.x {
+            -turnfactor
+        } else {
+            0.0
+        };
+
+        let y = if self_boid.position.y < r.left_up.y {
+            turnfactor
+        } else if self_boid.position.y > r.right_down.y {
+            -turnfactor
+        } else {
+            0.0
+        };
+        Vector2::new(x, y)
+    }
 }

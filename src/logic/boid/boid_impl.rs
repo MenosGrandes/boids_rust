@@ -1,10 +1,13 @@
-use sdl2::{gfx::primitives::DrawRenderer, rect::Rect, render::WindowCanvas};
+use sdl2::{
+    rect::{Point, Rect},
+    render::WindowCanvas,
+};
 
 use super::traits::*;
 use crate::{
     constants::{
-        types::BoidId, BOID_COLOR, BOID_ID_ITERATOR, BOID_SIZE, BORDER_BEHAVIOUR, DRAW_VIEW,
-        MAX_BOID_FORCE, VIEW_COLOR,
+        types::BoidId, DrawPrimitives, BOID_COLOR, BOID_ID_ITERATOR, BORDER_BEHAVIOUR,
+        DRAW_PRIMITIVES, MAX_BOID_FORCE, VIEW_COLOR,
     },
     graphics::renderer::Renderable,
     logic::behaviour::traits::BorderBehaviour,
@@ -39,31 +42,42 @@ impl Boid {
 }
 
 impl Renderable for Boid {
-    fn render(&mut self, canvas: &mut WindowCanvas){
+    fn render(&mut self, canvas: &mut WindowCanvas) {
         canvas.set_draw_color(BOID_COLOR);
-        DRAW_VIEW.with(|value: &std::cell::RefCell<bool>| {
-            if *value.borrow() {
+        DRAW_PRIMITIVES.with(|value| {
+            if value.borrow().contains(DrawPrimitives::BOID_VIEW) {
                 canvas.set_draw_color(VIEW_COLOR);
                 let r = Region::rect_from_center(self.position);
                 let _ = canvas.draw_rect(Rect::from(r));
             }
         });
         canvas.set_draw_color(BOID_COLOR);
-        let boid_rect =
-            Region::rect_from_center_with_distance(self.position, (BOID_SIZE * 2) as f32);
-        let _ = canvas.draw_rect(Rect::from(boid_rect));
+        let _ = canvas.draw_point(Point::new(self.position.x as i32, self.position.y as i32));
     }
 }
 impl Updatable for Boid {
     fn update(&mut self) {
-        self.velocity += self.acceleration * MAX_BOID_FORCE;
-        self.position += self.velocity;
-        self.acceleration = V2f32::zero();
-        BORDER_BEHAVIOUR.with(|beh| self.border(&beh.borrow()));
-        if self.position.x < 0.0 || self.position.y < 0.0
-        {
-            log::error!(" 2 position cannot be {:?} velocity {:?}", self.position, self.velocity);
-            panic!("2 position cannot be {:?}, velocity {:?}", self.position, self.velocity);
+        if self.acceleration.x != f32::NAN || self.acceleration.y != f32::NAN {
+            self.velocity += self.acceleration * MAX_BOID_FORCE;
+            self.position += self.velocity;
+            self.acceleration = V2f32::zero();
+            BORDER_BEHAVIOUR.with(|beh| self.border(&beh.borrow()));
+            /*
+            if self.position.x < 0.0
+                || self.position.y < 0.0
+                || self.position.x == f32::NAN
+                || self.position.y == f32::NAN
+            {
+                log::error!(
+                    " 2 position cannot be {:?} velocity {:?}",
+                    self.position,
+                    self.velocity
+                );
+                panic!(
+                    "2 position cannot be {:?}, velocity {:?}",
+                    self.position, self.velocity
+                );
+            }*/
         }
     }
 }

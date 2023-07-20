@@ -10,7 +10,8 @@ extern crate sdl2;
 use std::time::Duration;
 
 use constants::{
-    BehaviourEnabled, BEHAVIOUR_ENABLED, BOIDS_AMOUNT, BORDER_BEHAVIOUR, DRAW_VIEW, SCREEN_SIZE,
+    BehaviourEnabled, DrawPrimitives, BEHAVIOUR_ENABLED, BOIDS_AMOUNT, BORDER_BEHAVIOUR,
+    CURRENT_VIEW_PORT, DRAW_PRIMITIVES, SCREEN_SIZE, VIEW_PORT_SIZE,
 };
 use graphics::renderer::{GfxSubsystem, RendererManager};
 use logic::behaviour::traits::BorderBehaviourE;
@@ -35,7 +36,11 @@ pub fn main() -> Result<(), String> {
 
     let config = Config::builder()
         .appender(Appender::builder().build("logfile", Box::new(logfile.unwrap())))
-        .build(Root::builder().appender("logfile").build(LevelFilter::Error));
+        .build(
+            Root::builder()
+                .appender("logfile")
+                .build(LevelFilter::Error),
+        );
 
     let _ = log4rs::init_config(config.unwrap());
 
@@ -44,7 +49,7 @@ pub fn main() -> Result<(), String> {
 
     let video_subsystem = gss.sdl_context.video()?;
     let window = video_subsystem
-        .window("Boids", SCREEN_SIZE.x, SCREEN_SIZE.y)
+        .window("Boids", VIEW_PORT_SIZE.x as u32, VIEW_PORT_SIZE.y as u32)
         .position_centered()
         .opengl()
         .build()
@@ -73,15 +78,6 @@ pub fn main() -> Result<(), String> {
                     Keycode::W => {
                         boid_manager.add_boid(1);
                     }
-                    Keycode::D => {
-                        DRAW_VIEW.with(|value: &std::cell::RefCell<bool>| {
-                            let v = match *value.borrow() {
-                                true => false,
-                                false => true,
-                            };
-                            *value.borrow_mut() = v;
-                        });
-                    }
                     Keycode::R => {
                         BORDER_BEHAVIOUR.with(|value: &std::cell::RefCell<BorderBehaviourE>| {
                             let v = match *value.borrow() {
@@ -100,6 +96,40 @@ pub fn main() -> Result<(), String> {
                     Keycode::Num3 => unsafe {
                         BEHAVIOUR_ENABLED ^= BehaviourEnabled::SEPERATE;
                     },
+                    Keycode::Num4 => {
+                        DRAW_PRIMITIVES.with(|value| {
+                            *value.borrow_mut() ^= DrawPrimitives::QUAD_TREE;
+                        });
+                    }
+                    Keycode::Num5 => {
+                        DRAW_PRIMITIVES.with(|value| {
+                            *value.borrow_mut() ^= DrawPrimitives::BOID_VIEW;
+                        });
+                    }
+                    Keycode::Left => {
+                        CURRENT_VIEW_PORT.with(|value| {
+                            value.borrow_mut().left_up.x += 20.0;
+                            value.borrow_mut().right_down.x += 20.0;
+                        });
+                    }
+                    Keycode::Right => {
+                        CURRENT_VIEW_PORT.with(|value| {
+                            value.borrow_mut().left_up.x -= 20.0;
+                            value.borrow_mut().right_down.x -= 20.0;
+                        });
+                    }
+                    Keycode::Down => {
+                        CURRENT_VIEW_PORT.with(|value| {
+                            value.borrow_mut().left_up.y -= 20.0;
+                            value.borrow_mut().right_down.y -= 20.0;
+                        });
+                    }
+                    Keycode::Up => {
+                        CURRENT_VIEW_PORT.with(|value| {
+                            value.borrow_mut().left_up.y += 20.0;
+                            value.borrow_mut().right_down.y += 20.0;
+                        });
+                    }
                     Keycode::Escape => break 'running,
                     _ => {}
                 },

@@ -1,4 +1,4 @@
-use crate::constants::{BEHAVIOUR_ENABLED, SCREEN_SIZE};
+use crate::constants::{BEHAVIOUR_ENABLED, CURRENT_VIEW_PORT};
 use crate::logic::boid::boid_mgr::BoidManager;
 
 use sdl2::pixels::Color;
@@ -50,15 +50,16 @@ pub struct RendererManager<'ttf, 'b> {
     gfx: GfxSubsystem<'ttf, 'b>,
 }
 impl<'ttf, 'b> RendererManager<'ttf, 'b> {
-    pub fn new(
-        window: Window,
-        gfx: GfxSubsystem<'ttf, 'b>,
-    ) -> RendererManager<'ttf, 'b> {
-        let canvas = window.into_canvas().build().map_err(|e| e.to_string()).unwrap();
+    pub fn new(window: Window, gfx: GfxSubsystem<'ttf, 'b>) -> RendererManager<'ttf, 'b> {
+        let canvas = window
+            .into_canvas()
+            .build()
+            .map_err(|e| e.to_string())
+            .unwrap();
         RendererManager { canvas, gfx }
     }
     //MenosGrandes why this isn't render?
-    pub fn draw(&mut self, boid_manager: &mut BoidManager)  {
+    pub fn draw(&mut self, boid_manager: &mut BoidManager) {
         self.canvas.set_draw_color(Color::BLACK);
         self.canvas.clear();
 
@@ -72,9 +73,19 @@ impl<'ttf, 'b> RendererManager<'ttf, 'b> {
             }
         }
 
+        //let view_port =
+
+        CURRENT_VIEW_PORT.with(|view_port| {
+            self.canvas.set_viewport(Some(rect!(
+                view_port.borrow().left_up.x,
+                view_port.borrow().left_up.y,
+                view_port.borrow().width_height.x,
+                view_port.borrow().width_height.y
+            )));
+        });
         self.canvas.present();
     }
-    pub fn draw_string(&mut self, text: String){
+    pub fn draw_string(&mut self, text: String) {
         let texture_creator = self.canvas.texture_creator();
         // render a surface, and convert it to a texture bound to the canvas
         let surface = self
@@ -83,19 +94,24 @@ impl<'ttf, 'b> RendererManager<'ttf, 'b> {
             .font
             .render(&text)
             .blended(Color::RGBA(255, 0, 0, 255))
-            .map_err(|e| e.to_string()).unwrap();
+            .map_err(|e| e.to_string())
+            .unwrap();
         let texture = texture_creator
             .create_texture_from_surface(&surface)
-            .map_err(|e| e.to_string()).unwrap();
-        let TextureQuery { width, height, .. } = texture.query();
+            .map_err(|e| e.to_string())
+            .unwrap();
+        let TextureQuery {   .. } = texture.query();
 
-        let padding = 64;
-        let target = self.get_centered_rect(
-            width,
-            height,
-            SCREEN_SIZE.x - padding,
-            SCREEN_SIZE.y - padding,
-        );
+        let _padding = 254;
+
+        let target = CURRENT_VIEW_PORT.with(|view_port| {
+            return self.get_centered_rect(
+                view_port.borrow().width_height.x as u32,
+                view_port.borrow().width_height.y as u32,
+                view_port.borrow().left_up.x as u32,
+                view_port.borrow().left_up.y as u32,
+            );
+        });
 
         let _ = self.canvas.copy(&texture, None, Some(target));
     }

@@ -23,6 +23,7 @@ pub trait Reflect<T> {
 }
 pub trait Normalize<T> {
     fn normalize(&mut self);
+    fn calc_normalize(&self) -> Self;
 }
 pub trait Distance<T = Self> {
     fn distance(first: Self, other: Self) -> Self;
@@ -375,6 +376,11 @@ macro_rules! vect_impl {
                     self.x = out.x;
                     self.y = out.y;
                 }
+            }
+            fn calc_normalize(&self) -> Self {
+                let mut clone = self.clone();
+                clone.normalize();
+                clone
             }
         }
     };

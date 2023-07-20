@@ -1,10 +1,10 @@
 use std::mem;
 
-use crate::constants::{MAX_BOID_IN_AREA, QUAD_TREE_COLOR, BOID_SIZE};
+use crate::constants::{MAX_BOID_IN_AREA, QUAD_TREE_COLOR};
 use crate::logic::boid::boid_impl::Boid;
 
 use crate::graphics::renderer::Renderable;
-use crate::math::vec::Vector2;
+
 
 use super::region::Region;
 use super::traits::{Intersect, SubInto};
@@ -21,7 +21,7 @@ pub enum QuadTree {
     Root { neighbours: [Box<QuadTree>; 4] },
 }
 impl Renderable for QuadTree {
-    fn render(&mut self, canvas: &mut sdl2::render::WindowCanvas){
+    fn render(&mut self, canvas: &mut sdl2::render::WindowCanvas) {
         canvas.set_draw_color(QUAD_TREE_COLOR);
 
         match self {
@@ -81,7 +81,7 @@ impl QuadTree {
 
                 log::info!("loop over neighbours start");
                 for n in neighbours {
-                log::info!("loop over neighbours iterate");
+                    log::info!("loop over neighbours iterate");
                     let ok = n.insert(boid);
                     if ok.is_ok() {
                         return ok;
