@@ -1,5 +1,6 @@
 use crate::constants::{
-    BehaviourConsts, BehaviourEnabled, BEHAVIOUR_ENABLED, MAX_BOID_SPEED, SCREEN_SIZE, VIEW_PORT_SIZE,
+    BehaviourConsts, BehaviourEnabled, BEHAVIOUR_ENABLED, MAX_BOID_SPEED, SCREEN_SIZE,
+    VIEW_PORT_SIZE,
 };
 use crate::logic::boid::boid_impl::Boid;
 use crate::math::quadtree::region::Region;
@@ -83,7 +84,10 @@ impl Behaviour for BoundBehaviour {
 
         let r: Region = Region::new(
             Vector2::new(100.0, 100.0),
-            Vector2::new((VIEW_PORT_SIZE.x - 100.0) as f32, (VIEW_PORT_SIZE.y - 100.0) as f32),
+            Vector2::new(
+                (VIEW_PORT_SIZE.x - 100.0) as f32,
+                (VIEW_PORT_SIZE.y - 100.0) as f32,
+            ),
         );
         let x = if self_boid.position.x < r.left_up.x {
             BehaviourConsts::BOUND_FACTOR

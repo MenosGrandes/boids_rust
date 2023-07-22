@@ -59,16 +59,13 @@ pub fn main() -> Result<(), String> {
     let mut fps_manager: FPSManager = FPSManager::new();
     fps_manager.set_framerate(100)?;
 
-    let r: Region = Region::new(
-        Vector2::new(0.0, 0.0),
-        Vector2::new(800.0 *2.0, 600.0 * 2.0),
-    );
+    let r: Region = Region::new(Vector2::new(0.0, 0.0), VIEW_PORT_SIZE);
     let mut boid_manager = BoidManager::new(r.clone());
     boid_manager.spawn_boid(BOIDS_AMOUNT);
     let mut event_pump = gss.sdl_context.event_pump()?;
     let mut renderer = RendererManager::new(window, gss);
 
-    let mut camera = camera::Camera::new(Vector2::new(0.0, 0.0));
+    let mut camera = camera::Camera::new(r.get_center_point());
 
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -100,14 +97,22 @@ pub fn main() -> Result<(), String> {
                         BEHAVIOUR_ENABLED ^= BehaviourEnabled::SEPERATE;
                     },
 
-                    Keycode::Num4 => {
+                    Keycode::Num4 => unsafe {
+                        BEHAVIOUR_ENABLED ^= BehaviourEnabled::BOUND;
+                    },
+                    Keycode::Num5 => {
                         DRAW_PRIMITIVES.with(|value| {
                             *value.borrow_mut() ^= DrawPrimitives::QUAD_TREE;
                         });
                     }
-                    Keycode::Num5 => {
+                    Keycode::Num6 => {
                         DRAW_PRIMITIVES.with(|value| {
                             *value.borrow_mut() ^= DrawPrimitives::BOID_VIEW;
+                        });
+                    }
+                    Keycode::Num7 => {
+                        DRAW_PRIMITIVES.with(|value| {
+                            *value.borrow_mut() ^= DrawPrimitives::BOUND_VIEW;
                         });
                     }
                     Keycode::Left => {

@@ -3,7 +3,10 @@ use sdl2::render::WindowCanvas;
 
 use crate::{
     camera::Camera,
-    constants::{types::BoidId, DrawPrimitives, DRAW_PRIMITIVES, MAX_BOID_IN_AREA, SCREEN_SIZE, VIEW_PORT_SIZE},
+    constants::{
+        types::BoidId, DrawPrimitives, DRAW_PRIMITIVES, MAX_BOID_IN_AREA, SCREEN_SIZE,
+        VIEW_PORT_SIZE,
+    },
     graphics::renderer::Renderable,
     logic::behaviour::traits::{
         AlignBehaviour, Behaviour, BoundBehaviour, CohesionBehaviour, SeperateBehaviour,
@@ -100,8 +103,11 @@ impl Renderable for BoidManager {
         DRAW_PRIMITIVES.with(|value| {
             if value.borrow().contains(DrawPrimitives::BOUND_VIEW) {
                 let mut r: Region = Region::new(
-                    Vector2::new(100.0, 100.0),
-                    Vector2::new((VIEW_PORT_SIZE.x - 100.0) as f32, (VIEW_PORT_SIZE.y - 100.0) as f32),
+                    Vector2::new(100.0, 100.0) - camera.pos,
+                    Vector2::new(
+                        (VIEW_PORT_SIZE.x - 100.0) as f32,
+                        (VIEW_PORT_SIZE.y - 100.0) as f32,
+                    ) - camera.pos,
                 );
                 r.render(canvas, camera);
             }
@@ -118,10 +124,7 @@ impl Default for BoidManager {
 impl Updatable for BoidManager {
     fn update(&mut self) {
         if self.update_tick == crate::constants::UPDATE_EVERY_TICK {
-            let scren_size_region: Region = Region::new(
-                Vector2::new(0.0, 0.0),
-                VIEW_PORT_SIZE
-            );
+            let scren_size_region: Region = Region::new(Vector2::new(0.0, 0.0), VIEW_PORT_SIZE);
             self.quad_tree = QuadTree::new(scren_size_region);
             for b in self.boids.iter_mut() {
                 match self.quad_tree.insert(*b) {
