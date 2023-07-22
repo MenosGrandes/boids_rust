@@ -5,6 +5,7 @@ use sdl2::{
 
 use super::traits::*;
 use crate::{
+    camera::Camera,
     constants::{
         types::BoidId, DrawPrimitives, BOID_COLOR, BOID_ID_ITERATOR, BORDER_BEHAVIOUR,
         DRAW_PRIMITIVES, MAX_BOID_FORCE, VIEW_COLOR,
@@ -42,17 +43,18 @@ impl Boid {
 }
 
 impl Renderable for Boid {
-    fn render(&mut self, canvas: &mut WindowCanvas) {
+    fn render(&mut self, canvas: &mut WindowCanvas, camera: &Camera) {
         canvas.set_draw_color(BOID_COLOR);
         DRAW_PRIMITIVES.with(|value| {
             if value.borrow().contains(DrawPrimitives::BOID_VIEW) {
                 canvas.set_draw_color(VIEW_COLOR);
-                let r = Region::rect_from_center(self.position);
+                let r = Region::rect_from_center(self.position - camera.pos);
                 let _ = canvas.draw_rect(Rect::from(r));
             }
         });
         canvas.set_draw_color(BOID_COLOR);
-        let _ = canvas.draw_point(Point::new(self.position.x as i32, self.position.y as i32));
+        let pos = self.position - camera.pos;
+        let _ = canvas.draw_point(Point::new(pos.x as i32, pos.y as i32));
     }
 }
 impl Updatable for Boid {

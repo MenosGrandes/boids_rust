@@ -2,26 +2,22 @@ use std::{fmt, str::FromStr};
 
 use crate::{
     logic::behaviour::traits::BorderBehaviourE,
-    math::{
-        quadtree::region::Region,
-        vec::{V2f32, V2u32, Vector2},
-    },
+    math::vec::{V2f32, V2u32, Vector2},
 };
 
-pub const SCREEN_SIZE: V2u32 = Vector2::new(800 , 600   );
-pub const VIEW_PORT_SIZE: V2f32 = Vector2::new(800.0, 600.0);
+pub const SCREEN_SIZE: V2u32 = Vector2::new(800, 600);
+pub const VIEW_PORT_SIZE: V2f32 = Vector2::new(800.0 * 2.0, 600.0 * 2.0);
 pub const BOID_SIZE: i16 = 1;
 pub const VIEW_DISTANCE: f32 = BOID_SIZE as f32 * 10.0 as f32;
 
 use std::cell::RefCell;
 
 thread_local!(pub static BORDER_BEHAVIOUR: RefCell<BorderBehaviourE> = RefCell::new(BorderBehaviourE::GoThrough));
-thread_local!(pub static CURRENT_VIEW_PORT: RefCell<Region> = RefCell::new(Region::new(Vector2::new(0.0,0.0),VIEW_PORT_SIZE )));
 
 pub const MAX_BOID_SPEED: f32 = 6.1;
 pub const MAX_BOID_FORCE: f32 = 0.501;
 pub const UPDATE_EVERY_TICK: u8 = 1;
-pub const BOIDS_AMOUNT: u64 = 30000;
+pub const BOIDS_AMOUNT: u64 = 3000;
 pub const MAX_BOID_IN_AREA: usize = (BOIDS_AMOUNT as usize * 1) / 100 as usize + 1;
 
 use bitflags::bitflags;

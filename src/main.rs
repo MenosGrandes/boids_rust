@@ -1,3 +1,4 @@
+pub mod camera;
 pub mod constants;
 pub mod graphics;
 pub mod logic;
@@ -11,7 +12,7 @@ use std::time::Duration;
 
 use constants::{
     BehaviourEnabled, DrawPrimitives, BEHAVIOUR_ENABLED, BOIDS_AMOUNT, BORDER_BEHAVIOUR,
-    CURRENT_VIEW_PORT, DRAW_PRIMITIVES, SCREEN_SIZE, VIEW_PORT_SIZE,
+    DRAW_PRIMITIVES, SCREEN_SIZE, VIEW_PORT_SIZE,
 };
 use graphics::renderer::{GfxSubsystem, RendererManager};
 use logic::behaviour::traits::BorderBehaviourE;
@@ -49,7 +50,7 @@ pub fn main() -> Result<(), String> {
 
     let video_subsystem = gss.sdl_context.video()?;
     let window = video_subsystem
-        .window("Boids", VIEW_PORT_SIZE.x as u32, VIEW_PORT_SIZE.y as u32)
+        .window("Boids", SCREEN_SIZE.x as u32, SCREEN_SIZE.y as u32)
         .position_centered()
         .opengl()
         .build()
@@ -60,12 +61,14 @@ pub fn main() -> Result<(), String> {
 
     let r: Region = Region::new(
         Vector2::new(0.0, 0.0),
-        Vector2::new(SCREEN_SIZE.x as f32, SCREEN_SIZE.y as f32),
+        Vector2::new(800.0 *2.0, 600.0 * 2.0),
     );
-    let mut boid_manager = BoidManager::new(r);
+    let mut boid_manager = BoidManager::new(r.clone());
     boid_manager.spawn_boid(BOIDS_AMOUNT);
     let mut event_pump = gss.sdl_context.event_pump()?;
     let mut renderer = RendererManager::new(window, gss);
+
+    let mut camera = camera::Camera::new(Vector2::new(0.0, 0.0));
 
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -96,6 +99,7 @@ pub fn main() -> Result<(), String> {
                     Keycode::Num3 => unsafe {
                         BEHAVIOUR_ENABLED ^= BehaviourEnabled::SEPERATE;
                     },
+
                     Keycode::Num4 => {
                         DRAW_PRIMITIVES.with(|value| {
                             *value.borrow_mut() ^= DrawPrimitives::QUAD_TREE;
@@ -107,28 +111,16 @@ pub fn main() -> Result<(), String> {
                         });
                     }
                     Keycode::Left => {
-                        CURRENT_VIEW_PORT.with(|value| {
-                            value.borrow_mut().left_up.x += 20.0;
-                            value.borrow_mut().right_down.x += 20.0;
-                        });
+                        camera.pos.x -= 20.0;
                     }
                     Keycode::Right => {
-                        CURRENT_VIEW_PORT.with(|value| {
-                            value.borrow_mut().left_up.x -= 20.0;
-                            value.borrow_mut().right_down.x -= 20.0;
-                        });
+                        camera.pos.x += 20.0;
                     }
                     Keycode::Down => {
-                        CURRENT_VIEW_PORT.with(|value| {
-                            value.borrow_mut().left_up.y -= 20.0;
-                            value.borrow_mut().right_down.y -= 20.0;
-                        });
+                        camera.pos.y += 20.0;
                     }
                     Keycode::Up => {
-                        CURRENT_VIEW_PORT.with(|value| {
-                            value.borrow_mut().left_up.y += 20.0;
-                            value.borrow_mut().right_down.y += 20.0;
-                        });
+                        camera.pos.y -= 20.0;
                     }
                     Keycode::Escape => break 'running,
                     _ => {}
@@ -137,7 +129,7 @@ pub fn main() -> Result<(), String> {
             }
         }
         boid_manager.update();
-        renderer.draw(&mut boid_manager);
+        renderer.draw(&mut boid_manager, &camera);
         ::std::thread::sleep(Duration::new(
             0,
             1_000_000_000u32 / fps_manager.get_framerate() as u32,

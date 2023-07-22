@@ -1,7 +1,9 @@
+use rayon::prelude::*;
 use sdl2::render::WindowCanvas;
 
 use crate::{
-    constants::{DrawPrimitives, DRAW_PRIMITIVES, MAX_BOID_IN_AREA, SCREEN_SIZE, types::BoidId},
+    camera::Camera,
+    constants::{types::BoidId, DrawPrimitives, DRAW_PRIMITIVES, MAX_BOID_IN_AREA, SCREEN_SIZE, VIEW_PORT_SIZE},
     graphics::renderer::Renderable,
     logic::behaviour::traits::{
         AlignBehaviour, Behaviour, BoundBehaviour, CohesionBehaviour, SeperateBehaviour,
@@ -41,8 +43,8 @@ impl BoidManager {
             c.set_magnitude(2.0);
             self.boids.push(Boid::new(
                 Vector2::random_from_vec(
-                    Vector2::new(0.0, SCREEN_SIZE.x as f32),
-                    Vector2::new(0.0, SCREEN_SIZE.y as f32),
+                    Vector2::new(0.0, VIEW_PORT_SIZE.x as f32),
+                    Vector2::new(0.0, VIEW_PORT_SIZE.y as f32),
                 ),
                 c,
                 Vector2::new(0.01, 0.01),
@@ -57,70 +59,41 @@ impl BoidManager {
         self.boids = Vec::new();
     }
 
-    fn update_boids_in_quad_tree_from_too(&mut self, boid_id_from : BoidId, boid_id_to : BoidId) {
-        for boid_id in boid_id_from..boid_id_to{
-            let mut other_visible_boids: Vec<Boid> = Vec::with_capacity(MAX_BOID_IN_AREA);
-            let region: Region = Region::rect_from_center(self.boids[boid_id].position);
-            self.quad_tree
-                .get_all_boids_in_boundry(&region, &mut other_visible_boids);
+    fn update_boids_in_quad_tree_from_too(&mut self, boid_id: BoidId) {
+        let mut other_visible_boids: Vec<Boid> = Vec::with_capacity(MAX_BOID_IN_AREA);
+        let region: Region = Region::rect_from_center(self.boids[boid_id].position);
+        self.quad_tree
+            .get_all_boids_in_boundry(&region, &mut other_visible_boids);
 
-            //There is only one boid in visible, same as the loop is in
-            //No need to do anything.
-            if other_visible_boids.len() == 1 {
-                self.boids[boid_id].update();
-                continue;
-            }
+        //There is only one boid in visible, same as the loop is in
+        //No need to do anything.
+        if other_visible_boids.len() == 1 {
+            self.boids[boid_id].update();
+            return;
+        }
 
-            for b in &other_visible_boids {
-                for behaviour in &self.behaviours {
-                    self.boids[b.id].acceleration += behaviour.calculate(&b, &other_visible_boids);
-                }
-                self.boids[b.id].update();
+        for b in &other_visible_boids {
+            for behaviour in &self.behaviours {
+                self.boids[b.id].acceleration += behaviour.calculate(&b, &other_visible_boids);
             }
+            self.boids[b.id].update();
         }
     }
     fn update_boids_in_quad_tree(&mut self) {
-        let threads = 1;
-        let every = self.boids.len()/threads;
-        let mut counter = 0;
-        for t in (every..self.boids.len()+1).step_by(every)
-        {
-            self.update_boids_in_quad_tree_from_too(counter,t);
-            counter+=every;
-        }
-        /*
-        for boid_id in 0..self.boids.len() {
-            let mut other_visible_boids: Vec<Boid> = Vec::with_capacity(MAX_BOID_IN_AREA);
-            let region: Region = Region::rect_from_center(self.boids[boid_id].position);
-            self.quad_tree
-                .get_all_boids_in_boundry(&region, &mut other_visible_boids);
-
-            //There is only one boid in visible, same as the loop is in
-            //No need to do anything.
-            if other_visible_boids.len() == 1 {
-                self.boids[boid_id].update();
-                continue;
-            }
-
-            for b in &other_visible_boids {
-                for behaviour in &self.behaviours {
-                    self.boids[b.id].acceleration += behaviour.calculate(&b, &other_visible_boids);
-                }
-                self.boids[b.id].update();
-            }
-        }
-        */
+        (0..self.boids.len()).into_iter().for_each(|boid_id| {
+            self.update_boids_in_quad_tree_from_too(boid_id);
+        });
     }
 }
 impl Renderable for BoidManager {
-    fn render(&mut self, canvas: &mut WindowCanvas) {
+    fn render(&mut self, canvas: &mut WindowCanvas, camera: &Camera) {
         for b in self.boids.iter_mut() {
-            b.render(canvas);
+            b.render(canvas, camera);
         }
 
         DRAW_PRIMITIVES.with(|value| {
             if value.borrow().contains(DrawPrimitives::QUAD_TREE) {
-                self.quad_tree.render(canvas);
+                self.quad_tree.render(canvas, camera);
             }
         });
 
@@ -128,9 +101,9 @@ impl Renderable for BoidManager {
             if value.borrow().contains(DrawPrimitives::BOUND_VIEW) {
                 let mut r: Region = Region::new(
                     Vector2::new(100.0, 100.0),
-                    Vector2::new((SCREEN_SIZE.x - 100) as f32, (SCREEN_SIZE.y - 100) as f32),
+                    Vector2::new((VIEW_PORT_SIZE.x - 100.0) as f32, (VIEW_PORT_SIZE.y - 100.0) as f32),
                 );
-                r.render(canvas);
+                r.render(canvas, camera);
             }
         });
     }
@@ -147,7 +120,7 @@ impl Updatable for BoidManager {
         if self.update_tick == crate::constants::UPDATE_EVERY_TICK {
             let scren_size_region: Region = Region::new(
                 Vector2::new(0.0, 0.0),
-                Vector2::new(SCREEN_SIZE.x as f32, SCREEN_SIZE.y as f32),
+                VIEW_PORT_SIZE
             );
             self.quad_tree = QuadTree::new(scren_size_region);
             for b in self.boids.iter_mut() {

@@ -1,4 +1,5 @@
-use crate::constants::{BEHAVIOUR_ENABLED, CURRENT_VIEW_PORT};
+use crate::camera::Camera;
+use crate::constants::{BEHAVIOUR_ENABLED, SCREEN_SIZE};
 use crate::logic::boid::boid_mgr::BoidManager;
 
 use sdl2::pixels::Color;
@@ -14,7 +15,7 @@ macro_rules! rect(
 );
 
 pub trait Renderable {
-    fn render(&mut self, canvas: &mut WindowCanvas);
+    fn render(&mut self, canvas: &mut WindowCanvas, camera: &Camera);
 }
 
 pub struct Writer<'ttf, 'b> {
@@ -59,11 +60,11 @@ impl<'ttf, 'b> RendererManager<'ttf, 'b> {
         RendererManager { canvas, gfx }
     }
     //MenosGrandes why this isn't render?
-    pub fn draw(&mut self, boid_manager: &mut BoidManager) {
+    pub fn draw(&mut self, boid_manager: &mut BoidManager, camera: &Camera) {
         self.canvas.set_draw_color(Color::BLACK);
         self.canvas.clear();
 
-        boid_manager.render(&mut self.canvas);
+        boid_manager.render(&mut self.canvas, camera);
 
         unsafe {
             if !BEHAVIOUR_ENABLED.is_empty() {
@@ -74,15 +75,6 @@ impl<'ttf, 'b> RendererManager<'ttf, 'b> {
         }
 
         //let view_port =
-
-        CURRENT_VIEW_PORT.with(|view_port| {
-            self.canvas.set_viewport(Some(rect!(
-                view_port.borrow().left_up.x,
-                view_port.borrow().left_up.y,
-                view_port.borrow().width_height.x,
-                view_port.borrow().width_height.y
-            )));
-        });
         self.canvas.present();
     }
     pub fn draw_string(&mut self, text: String) {
@@ -100,20 +92,18 @@ impl<'ttf, 'b> RendererManager<'ttf, 'b> {
             .create_texture_from_surface(&surface)
             .map_err(|e| e.to_string())
             .unwrap();
-        let TextureQuery { .. } = texture.query();
+        let TextureQuery { width, height, .. } = texture.query();
 
-        let _padding = 254;
+        let padding = 254;
 
-        let target = CURRENT_VIEW_PORT.with(|view_port| {
-            return self.get_centered_rect(
-                view_port.borrow().width_height.x as u32,
-                view_port.borrow().width_height.y as u32,
-                view_port.borrow().left_up.x as u32,
-                view_port.borrow().left_up.y as u32,
-            );
-        });
+        let target = self.get_centered_rect(
+            width,
+            height,
+            SCREEN_SIZE.x - padding,
+            SCREEN_SIZE.y - padding,
+        );
 
-        let _ = self.canvas.copy(&texture, None, Some(target));
+        let _ = self.canvas.copy(&texture, None, target);
     }
     fn get_centered_rect(
         &self,

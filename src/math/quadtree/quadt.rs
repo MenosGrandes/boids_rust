@@ -1,5 +1,6 @@
 use std::mem;
 
+use crate::camera::Camera;
 use crate::constants::{MAX_BOID_IN_AREA, QUAD_TREE_COLOR};
 use crate::logic::boid::boid_impl::Boid;
 
@@ -20,21 +21,21 @@ pub enum QuadTree {
     Root { neighbours: [Box<QuadTree>; 4] },
 }
 impl Renderable for QuadTree {
-    fn render(&mut self, canvas: &mut sdl2::render::WindowCanvas) {
+    fn render(&mut self, canvas: &mut sdl2::render::WindowCanvas, camera: &Camera) {
         canvas.set_draw_color(QUAD_TREE_COLOR);
 
         match self {
             QuadTree::Leaf { boundary, boids: _ } => {
                 let _ = canvas.draw_rect(rect!(
-                    boundary.left_up.x,
-                    boundary.left_up.y,
+                    boundary.left_up.x - camera.pos.x,
+                    boundary.left_up.y - camera.pos.y,
                     boundary.width_height.x,
                     boundary.width_height.y
                 ));
             }
             QuadTree::Root { neighbours } => {
                 for n in neighbours {
-                    n.render(canvas);
+                    n.render(canvas, camera);
                 }
             }
         }
@@ -50,10 +51,7 @@ impl QuadTree {
 
     pub fn count(&self) -> usize {
         match self {
-            QuadTree::Leaf {
-                boundary: _,
-                boids,
-            } => return boids.len(),
+            QuadTree::Leaf { boundary: _, boids } => return boids.len(),
             QuadTree::Root { neighbours } => neighbours.into_iter().map(|n| n.count()).sum(),
         }
     }
@@ -96,10 +94,7 @@ impl QuadTree {
     fn subdivide(&mut self) {
         log::debug!("divide area");
         match self {
-            QuadTree::Leaf {
-                boundary,
-                boids,
-            } => {
+            QuadTree::Leaf { boundary, boids } => {
                 let b = Region::sub_into(&boundary);
 
                 let nei: [Box<QuadTree>; 4] = b

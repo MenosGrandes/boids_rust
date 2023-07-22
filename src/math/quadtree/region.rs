@@ -1,4 +1,5 @@
 use crate::{
+    camera::Camera,
     constants::{REGION_COLOR, VIEW_DISTANCE},
     graphics::renderer::Renderable,
     logic::boid::boid_impl::Boid,
@@ -59,7 +60,7 @@ impl Region {
     }
 }
 impl Renderable for Region {
-    fn render(&mut self, canvas: &mut sdl2::render::WindowCanvas) {
+    fn render(&mut self, canvas: &mut sdl2::render::WindowCanvas, camera: &Camera) {
         canvas.set_draw_color(REGION_COLOR);
         let _ = canvas.draw_rect(rect!(
             self.left_up.x,
