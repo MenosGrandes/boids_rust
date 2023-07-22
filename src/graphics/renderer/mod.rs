@@ -100,7 +100,7 @@ impl<'ttf, 'b> RendererManager<'ttf, 'b> {
             .create_texture_from_surface(&surface)
             .map_err(|e| e.to_string())
             .unwrap();
-        let TextureQuery {   .. } = texture.query();
+        let TextureQuery { .. } = texture.query();
 
         let _padding = 254;
 

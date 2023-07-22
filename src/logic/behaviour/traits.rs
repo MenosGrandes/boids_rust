@@ -14,7 +14,7 @@ pub enum BorderBehaviourE {
 pub trait BorderBehaviour {
     fn border(&mut self, e: &BorderBehaviourE);
 }
-pub trait Behaviour {
+pub trait Behaviour: Send + Sync {
     fn calculate(&self, self_boid: &Boid, other_boids: &[Boid]) -> V2f32;
 }
 
@@ -85,19 +85,18 @@ impl Behaviour for BoundBehaviour {
             Vector2::new(100.0, 100.0),
             Vector2::new((SCREEN_SIZE.x - 100) as f32, (SCREEN_SIZE.y - 100) as f32),
         );
-        let turnfactor = 0.25;
         let x = if self_boid.position.x < r.left_up.x {
-            turnfactor
+            BehaviourConsts::BOUND_FACTOR
         } else if self_boid.position.x > r.right_down.x {
-            -turnfactor
+            -BehaviourConsts::BOUND_FACTOR
         } else {
             0.0
         };
 
         let y = if self_boid.position.y < r.left_up.y {
-            turnfactor
+            BehaviourConsts::BOUND_FACTOR
         } else if self_boid.position.y > r.right_down.y {
-            -turnfactor
+            -BehaviourConsts::BOUND_FACTOR
         } else {
             0.0
         };

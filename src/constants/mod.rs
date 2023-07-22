@@ -8,7 +8,7 @@ use crate::{
     },
 };
 
-pub const SCREEN_SIZE: V2u32 = Vector2::new(800, 600);
+pub const SCREEN_SIZE: V2u32 = Vector2::new(800 , 600   );
 pub const VIEW_PORT_SIZE: V2f32 = Vector2::new(800.0, 600.0);
 pub const BOID_SIZE: i16 = 1;
 pub const VIEW_DISTANCE: f32 = BOID_SIZE as f32 * 10.0 as f32;
@@ -21,8 +21,8 @@ thread_local!(pub static CURRENT_VIEW_PORT: RefCell<Region> = RefCell::new(Regio
 pub const MAX_BOID_SPEED: f32 = 6.1;
 pub const MAX_BOID_FORCE: f32 = 0.501;
 pub const UPDATE_EVERY_TICK: u8 = 1;
-pub const BOIDS_AMOUNT: u64 = 2000;
-pub const MAX_BOID_IN_AREA: usize = (BOIDS_AMOUNT as usize * 20) / 100 as usize + 1;
+pub const BOIDS_AMOUNT: u64 = 30000;
+pub const MAX_BOID_IN_AREA: usize = (BOIDS_AMOUNT as usize * 1) / 100 as usize + 1;
 
 use bitflags::bitflags;
 use sdl2::pixels::Color;
@@ -43,6 +43,7 @@ impl BehaviourConsts {
     pub const ALLIGN_FACTOR: f32 = 0.3;
     pub const COHESION_FACTOR: f32 = 0.3;
     pub const SEPERATE_FACTOR: f32 = 0.3;
+    pub const BOUND_FACTOR: f32 = 0.3;
 }
 
 pub static mut BEHAVIOUR_ENABLED: BehaviourEnabled = BehaviourEnabled::ALL_ENABLED;

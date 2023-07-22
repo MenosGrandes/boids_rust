@@ -5,7 +5,6 @@ use crate::logic::boid::boid_impl::Boid;
 
 use crate::graphics::renderer::Renderable;
 
-
 use super::region::Region;
 use super::traits::{Intersect, SubInto};
 
@@ -53,8 +52,8 @@ impl QuadTree {
         match self {
             QuadTree::Leaf {
                 boundary: _,
-                boids: points,
-            } => return points.len(),
+                boids,
+            } => return boids.len(),
             QuadTree::Root { neighbours } => neighbours.into_iter().map(|n| n.count()).sum(),
         }
     }
@@ -99,7 +98,7 @@ impl QuadTree {
         match self {
             QuadTree::Leaf {
                 boundary,
-                boids: points,
+                boids,
             } => {
                 let b = Region::sub_into(&boundary);
 
@@ -111,7 +110,7 @@ impl QuadTree {
                     .unwrap();
 
                 let mut new = QuadTree::Root { neighbours: nei };
-                for p in points {
+                for p in boids {
                     let _ = new.insert(*p);
                 }
                 let _ = mem::replace(self, new);

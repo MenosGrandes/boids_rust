@@ -1,7 +1,7 @@
 use sdl2::render::WindowCanvas;
 
 use crate::{
-    constants::{DrawPrimitives, DRAW_PRIMITIVES, MAX_BOID_IN_AREA, SCREEN_SIZE},
+    constants::{DrawPrimitives, DRAW_PRIMITIVES, MAX_BOID_IN_AREA, SCREEN_SIZE, types::BoidId},
     graphics::renderer::Renderable,
     logic::behaviour::traits::{
         AlignBehaviour, Behaviour, BoundBehaviour, CohesionBehaviour, SeperateBehaviour,
@@ -57,7 +57,38 @@ impl BoidManager {
         self.boids = Vec::new();
     }
 
+    fn update_boids_in_quad_tree_from_too(&mut self, boid_id_from : BoidId, boid_id_to : BoidId) {
+        for boid_id in boid_id_from..boid_id_to{
+            let mut other_visible_boids: Vec<Boid> = Vec::with_capacity(MAX_BOID_IN_AREA);
+            let region: Region = Region::rect_from_center(self.boids[boid_id].position);
+            self.quad_tree
+                .get_all_boids_in_boundry(&region, &mut other_visible_boids);
+
+            //There is only one boid in visible, same as the loop is in
+            //No need to do anything.
+            if other_visible_boids.len() == 1 {
+                self.boids[boid_id].update();
+                continue;
+            }
+
+            for b in &other_visible_boids {
+                for behaviour in &self.behaviours {
+                    self.boids[b.id].acceleration += behaviour.calculate(&b, &other_visible_boids);
+                }
+                self.boids[b.id].update();
+            }
+        }
+    }
     fn update_boids_in_quad_tree(&mut self) {
+        let threads = 1;
+        let every = self.boids.len()/threads;
+        let mut counter = 0;
+        for t in (every..self.boids.len()+1).step_by(every)
+        {
+            self.update_boids_in_quad_tree_from_too(counter,t);
+            counter+=every;
+        }
+        /*
         for boid_id in 0..self.boids.len() {
             let mut other_visible_boids: Vec<Boid> = Vec::with_capacity(MAX_BOID_IN_AREA);
             let region: Region = Region::rect_from_center(self.boids[boid_id].position);
@@ -78,6 +109,7 @@ impl BoidManager {
                 self.boids[b.id].update();
             }
         }
+        */
     }
 }
 impl Renderable for BoidManager {
