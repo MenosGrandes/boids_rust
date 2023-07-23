@@ -19,7 +19,6 @@ use crate::{
 pub struct Boid {
     pub position: V2f32,
     pub velocity: V2f32,
-    pub acceleration: V2f32,
     pub id: BoidId,
 }
 /*
@@ -32,11 +31,10 @@ impl std::fmt::Debug for Boid {
     }
 }*/
 impl Boid {
-    pub fn new(position: V2f32, velocity: V2f32, acceleration: V2f32) -> Self {
+    pub fn new(position: V2f32, velocity: V2f32) -> Self {
         Self {
             position,
             velocity,
-            acceleration,
             id: BOID_ID_ITERATOR.with(|id| id.borrow_mut().get_next()),
         }
     }
@@ -48,7 +46,7 @@ impl Renderable for Boid {
         DRAW_PRIMITIVES.with(|value| {
             if value.borrow().contains(DrawPrimitives::BOID_VIEW) {
                 canvas.set_draw_color(VIEW_COLOR);
-                let r = Region::rect_from_center(self.position - camera.pos);
+                let r = Region::rect_from_center(camera.calc_pos_v2f32(self.position));
                 let _ = canvas.draw_rect(Rect::from(r));
             }
         });
@@ -57,12 +55,11 @@ impl Renderable for Boid {
         let _ = canvas.draw_point(Point::new(pos.x as i32, pos.y as i32));
     }
 }
-impl Updatable for Boid {
-    fn update(&mut self) {
-        if self.acceleration.x != f32::NAN || self.acceleration.y != f32::NAN {
-            self.velocity += self.acceleration * MAX_BOID_FORCE;
+impl UpdatableAcceleration for Boid {
+    fn update(&mut self, acceleration: V2f32) {
+        if acceleration.x != f32::NAN || acceleration.y != f32::NAN {
+            self.velocity += acceleration * MAX_BOID_FORCE;
             self.position += self.velocity;
-            self.acceleration = V2f32::zero();
             BORDER_BEHAVIOUR.with(|beh| self.border(&beh.borrow()));
             /*
             if self.position.x < 0.0

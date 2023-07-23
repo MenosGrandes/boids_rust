@@ -48,11 +48,11 @@ impl Region {
             width_height: V2f32::new(width, height),
         }
     }
-    pub fn get_center_point(&self) -> V2f32
-    {
-        V2f32::new(self.left_up.x + self.width_height.x/2.0,
-        self.left_up.y + self.width_height.y/2.0)
-
+    pub fn get_center_point(&self) -> V2f32 {
+        V2f32::new(
+            self.left_up.x + self.width_height.x / 2.0,
+            self.left_up.y + self.width_height.y / 2.0,
+        )
     }
     pub fn is_empty(&self) -> bool {
         return self.width_height.x == 0.0 || self.width_height.y == 0.0;

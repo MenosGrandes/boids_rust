@@ -1,8 +1,10 @@
 pub mod camera;
 pub mod constants;
+pub mod game;
 pub mod graphics;
 pub mod logic;
 pub mod math;
+pub mod ecs;
 
 extern crate approx;
 extern crate crossbeam;
@@ -14,6 +16,7 @@ use constants::{
     BehaviourEnabled, DrawPrimitives, BEHAVIOUR_ENABLED, BOIDS_AMOUNT, BORDER_BEHAVIOUR,
     DRAW_PRIMITIVES, SCREEN_SIZE, VIEW_PORT_SIZE,
 };
+use game::GameBuilder;
 use graphics::renderer::{GfxSubsystem, RendererManager};
 use logic::behaviour::traits::BorderBehaviourE;
 use logic::boid::boid_mgr::BoidManager;
@@ -30,31 +33,19 @@ use log4rs::config::{Appender, Config, Root};
 use log4rs::encode::pattern::PatternEncoder;
 
 pub fn main() -> Result<(), String> {
-    /*Init Logger*/
-    let logfile = FileAppender::builder()
-        .encoder(Box::new(PatternEncoder::new("{d}: {l} - {m}\n")))
-        .build("log/output.log");
+        let ttf_context = sdl2::ttf::init().unwrap();
+        let gss = GfxSubsystem::new(&ttf_context);
 
-    let config = Config::builder()
-        .appender(Appender::builder().build("logfile", Box::new(logfile.unwrap())))
-        .build(
-            Root::builder()
-                .appender("logfile")
-                .build(LevelFilter::Error),
-        );
+        let video_subsystem = gss.sdl_context.video()?;
+        let window = video_subsystem
+            .window("Boids", SCREEN_SIZE.x as u32, SCREEN_SIZE.y as u32)
+            .position_centered()
+            .opengl()
+            .build()
+            .map_err(|e| e.to_string())?;
 
-    let _ = log4rs::init_config(config.unwrap());
-
-    let ttf_context = sdl2::ttf::init().unwrap();
-    let gss = GfxSubsystem::new(&ttf_context);
-
-    let video_subsystem = gss.sdl_context.video()?;
-    let window = video_subsystem
-        .window("Boids", SCREEN_SIZE.x as u32, SCREEN_SIZE.y as u32)
-        .position_centered()
-        .opengl()
-        .build()
-        .map_err(|e| e.to_string())?;
+        let mut event_pump = gss.sdl_context.event_pump()?;
+    let mut renderer = RendererManager::new(window, gss);
 
     let mut fps_manager: FPSManager = FPSManager::new();
     fps_manager.set_framerate(100)?;
@@ -62,8 +53,7 @@ pub fn main() -> Result<(), String> {
     let r: Region = Region::new(Vector2::new(0.0, 0.0), VIEW_PORT_SIZE);
     let mut boid_manager = BoidManager::new(r.clone());
     boid_manager.spawn_boid(BOIDS_AMOUNT);
-    let mut event_pump = gss.sdl_context.event_pump()?;
-    let mut renderer = RendererManager::new(window, gss);
+
 
     let mut camera = camera::Camera::new(r.get_center_point());
 

@@ -13,11 +13,14 @@ use crate::{
     },
     math::{
         quadtree::{quadt::QuadTree, region::Region},
-        vec::{Magnitude, Vector2},
+        vec::{Magnitude, V2f32, Vector2},
     },
 };
 
-use super::{boid_impl::Boid, traits::Updatable};
+use super::{
+    boid_impl::Boid,
+    traits::{Updatable, UpdatableAcceleration},
+};
 
 pub struct BoidManager {
     pub boids: Vec<Boid>,
@@ -50,7 +53,6 @@ impl BoidManager {
                     Vector2::new(0.0, VIEW_PORT_SIZE.y as f32),
                 ),
                 c,
-                Vector2::new(0.01, 0.01),
             ));
         }
     }
@@ -71,15 +73,21 @@ impl BoidManager {
         //There is only one boid in visible, same as the loop is in
         //No need to do anything.
         if other_visible_boids.len() == 1 {
-            self.boids[boid_id].update();
+            self.boids[boid_id].update(Vector2::zero());
             return;
         }
 
         for b in &other_visible_boids {
+            /*
             for behaviour in &self.behaviours {
                 self.boids[b.id].acceleration += behaviour.calculate(&b, &other_visible_boids);
-            }
-            self.boids[b.id].update();
+            }*/
+            let acceleration: V2f32 = self
+                .behaviours
+                .iter()
+                .map(|behaviour| behaviour.calculate(&b, &other_visible_boids))
+                .sum();
+            self.boids[b.id].update(acceleration);
         }
     }
     fn update_boids_in_quad_tree(&mut self) {

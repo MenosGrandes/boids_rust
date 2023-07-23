@@ -1,10 +1,11 @@
 use std::mem;
 
 use crate::camera::Camera;
-use crate::constants::{MAX_BOID_IN_AREA, QUAD_TREE_COLOR};
+use crate::constants::{BOID_SIZE, MAX_BOID_IN_AREA, QUAD_TREE_COLOR};
 use crate::logic::boid::boid_impl::Boid;
 
 use crate::graphics::renderer::Renderable;
+use crate::math::vec::Vector2;
 
 use super::region::Region;
 use super::traits::{Intersect, SubInto};
@@ -149,7 +150,6 @@ fn get_all_boids_in_boundry() {
                 i as f32 * y + BOID_SIZE as f32,
             ),
             Vector2::zero(),
-            Vector2::zero(),
         ));
     }
 
@@ -190,7 +190,6 @@ fn get_all_boids_in_boundry_view_of_boid() {
                 i as f32 * x + BOID_SIZE as f32,
                 i as f32 * y + BOID_SIZE as f32,
             ),
-            Vector2::zero(),
             Vector2::zero(),
         );
         boids.push(boid);
