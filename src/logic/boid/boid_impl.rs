@@ -1,4 +1,6 @@
 use sdl2::{
+    gfx::primitives::DrawRenderer,
+    pixels::Color,
     rect::{Point, Rect},
     render::WindowCanvas,
 };
@@ -7,12 +9,15 @@ use super::traits::*;
 use crate::{
     camera::Camera,
     constants::{
-        types::BoidId, DrawPrimitives, BOID_COLOR, BOID_ID_ITERATOR, BORDER_BEHAVIOUR,
-        DRAW_PRIMITIVES, MAX_BOID_FORCE, VIEW_COLOR,
+        types::BoidId, DrawPrimitives, BOID_COLOR, BOID_ID_ITERATOR, BOID_SIZE, BORDER_BEHAVIOUR,
+        DRAW_PRIMITIVES, MAX_BOID_FORCE, MAX_BOID_SPEED, VIEW_COLOR,
     },
     graphics::renderer::Renderable,
     logic::behaviour::traits::BorderBehaviour,
-    math::{quadtree::region::Region, vec::V2f32},
+    math::{
+        quadtree::region::Region,
+        vec::{Magnitude, V2f32},
+    },
 };
 
 #[derive(PartialEq, Copy, Clone, Debug)]
@@ -51,32 +56,26 @@ impl Renderable for Boid {
             }
         });
         canvas.set_draw_color(BOID_COLOR);
-        let pos = self.position - camera.pos;
-        let _ = canvas.draw_point(Point::new(pos.x as i32, pos.y as i32));
+        let r = Region::rect_from_center_with_distance(
+            camera.calc_pos_v2f32(self.position),
+            BOID_SIZE as f32,
+        );
+        let _ = canvas.rectangle(
+            r.left_up.x as i16,
+            r.left_up.y as i16,
+            r.right_down.x as i16,
+            r.right_down.y as i16,
+            Color::BLUE,
+        );
     }
 }
 impl UpdatableAcceleration for Boid {
     fn update(&mut self, acceleration: V2f32) {
-        if acceleration.x != f32::NAN || acceleration.y != f32::NAN {
-            self.velocity += acceleration * MAX_BOID_FORCE;
-            self.position += self.velocity;
-            BORDER_BEHAVIOUR.with(|beh| self.border(&beh.borrow()));
-            /*
-            if self.position.x < 0.0
-                || self.position.y < 0.0
-                || self.position.x == f32::NAN
-                || self.position.y == f32::NAN
-            {
-                log::error!(
-                    " 2 position cannot be {:?} velocity {:?}",
-                    self.position,
-                    self.velocity
-                );
-                panic!(
-                    "2 position cannot be {:?}, velocity {:?}",
-                    self.position, self.velocity
-                );
-            }*/
-        }
+        log::info!("UpdateAcceleration acceleration {:?}", acceleration);
+        BORDER_BEHAVIOUR.with(|beh| self.border(&beh.borrow()));
+        self.position += self.velocity;
+        self.velocity += acceleration; // * MAX_BOID_FORCE;
+        self.velocity.limit(MAX_BOID_SPEED);
+        log::info!("update {:?}", self);
     }
 }

@@ -45,16 +45,18 @@ impl BoidManager {
 
     pub fn add_boid(&mut self, amount: u64) {
         for _i in 0..amount {
-            let mut c = Vector2::random(-1.0, 1.0); //
-            c.set_magnitude(2.0);
-            self.boids.push(Boid::new(
-                Vector2::random_from_vec(
-                    Vector2::new(0.0, VIEW_PORT_SIZE.x as f32),
-                    Vector2::new(0.0, VIEW_PORT_SIZE.y as f32),
-                ),
-                c,
-            ));
+            let mut c = Vector2::random(-0.5, 0.5);
+            c.set_magnitude(1.0);
+            let rand_pos = Vector2::random_from_vec(
+                Vector2::new(0.0, VIEW_PORT_SIZE.x as f32),
+                Vector2::new(0.0, VIEW_PORT_SIZE.y as f32),
+            );
+            println!("{}", rand_pos);
+            self.boids.push(Boid::new(rand_pos, c));
         }
+        log::info!("SPAWN");
+        self.boids.iter().for_each(|boid| log::info!("{:?}", boid));
+        log::info!("END SPAWN");
     }
     pub fn spawn_boid(&mut self, amount: u64) {
         self.boids = Vec::with_capacity(amount as usize);
@@ -67,21 +69,11 @@ impl BoidManager {
     fn update_boids_in_quad_tree_from_too(&mut self, boid_id: BoidId) {
         let mut other_visible_boids: Vec<Boid> = Vec::with_capacity(MAX_BOID_IN_AREA);
         let region: Region = Region::rect_from_center(self.boids[boid_id].position);
+
         self.quad_tree
             .get_all_boids_in_boundry(&region, &mut other_visible_boids);
 
-        //There is only one boid in visible, same as the loop is in
-        //No need to do anything.
-        if other_visible_boids.len() == 1 {
-            self.boids[boid_id].update(Vector2::zero());
-            return;
-        }
-
         for b in &other_visible_boids {
-            /*
-            for behaviour in &self.behaviours {
-                self.boids[b.id].acceleration += behaviour.calculate(&b, &other_visible_boids);
-            }*/
             let acceleration: V2f32 = self
                 .behaviours
                 .iter()
@@ -90,6 +82,7 @@ impl BoidManager {
             self.boids[b.id].update(acceleration);
         }
     }
+
     fn update_boids_in_quad_tree(&mut self) {
         (0..self.boids.len()).into_iter().for_each(|boid_id| {
             self.update_boids_in_quad_tree_from_too(boid_id);
@@ -135,17 +128,19 @@ impl Updatable for BoidManager {
             let scren_size_region: Region = Region::new(Vector2::new(0.0, 0.0), VIEW_PORT_SIZE);
             self.quad_tree = QuadTree::new(scren_size_region);
             for b in self.boids.iter_mut() {
+                log::info!("Inser {:?} into qTree", b);
                 match self.quad_tree.insert(*b) {
-                    Err(_err) => {
-                        /*
+                    Err(err) => {
                         log::error!(
                             "Panic {} for {:?}, quad_tree = {:?}",
                             err,
                             *b,
                             self.quad_tree
                         );
-                        panic!("{}", err)
-                        */
+                        panic!(
+                            "Panic {} for {:?}, quad_tree = {:?}",
+                            err, *b, self.quad_tree
+                        );
                     }
                     _ => {}
                 }

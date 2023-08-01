@@ -26,7 +26,8 @@ pub trait Normalize<T> {
     fn calc_normalize(&self) -> Self;
 }
 pub trait Distance<T = Self> {
-    fn distance(first: Self, other: Self) -> Self;
+    type Output;
+    fn distance(first: Self, other: Self) -> Self::Output;
 }
 pub trait InBetween<T = Self> {
     type Scalar;
@@ -37,6 +38,7 @@ pub trait Magnitude<T> {
     type Output;
     fn calc_magnitude(&self) -> Self::Output;
     fn set_magnitude(&mut self, magnitude: T);
+    fn limit(&mut self, magnitude: T);
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -353,21 +355,6 @@ macro_rules! vect_impl {
             }
         }
 
-        impl Distance<$t> for Vector2<$t>
-        where
-            $t: Add<Output = $t>
-                + Sub<Output = $t>
-                + Copy
-                + Default
-                + Mul<Output = $t>
-                + NumCast
-                + SampleUniform
-                + PartialOrd,
-        {
-            fn distance(first: Self, other: Self) -> Self {
-                first - other
-            }
-        }
         impl Normalize<$t> for Vector2<$t> {
             fn normalize(&mut self) {
                 let c = self.calc_magnitude();
@@ -386,6 +373,53 @@ macro_rules! vect_impl {
     };
 }
 
+macro_rules! distance_impl_int {
+    ($t:ty) => {
+        impl Distance<$t> for Vector2<$t>
+        where
+            $t: Add<Output = $t>
+                + Sub<Output = $t>
+                + Copy
+                + Default
+                + Mul<Output = $t>
+                + NumCast
+                + SampleUniform
+                + PartialOrd,
+        {
+            type Output = $t;
+            #[inline]
+            fn distance(first: Self, second: Self) -> Self::Output {
+                let x = second.x - first.x;
+                let y = second.y - first.y;
+                (x * x + y * y).sqrt()
+            }
+        }
+    };
+}
+macro_rules! distance_impl_float {
+    ($t:ty) => {
+        impl Distance<$t> for Vector2<$t>
+        where
+            $t: Add<Output = $t>
+                + Sub<Output = $t>
+                + Copy
+                + Default
+                + Mul<Output = $t>
+                + NumCast
+                + SampleUniform
+                + PartialOrd,
+        {
+            type Output = $t;
+            #[inline]
+            fn distance(first: Self, second: Self) -> Self::Output {
+                let x = second.x - first.x;
+                let y = second.y - first.y;
+                <$t>::sqrt(x * x + y * y)
+            }
+        }
+    };
+}
+
 macro_rules! set_magnitude_impl {
     ($t:ty) => {
         #[inline]
@@ -393,6 +427,11 @@ macro_rules! set_magnitude_impl {
             let current_magnitude = self.calc_magnitude();
             self.x = self.x * magnitude / current_magnitude;
             self.y = self.y * magnitude / current_magnitude;
+        }
+        fn limit(&mut self, magnitude: $t) {
+            if self.calc_magnitude() > magnitude {
+                self.set_magnitude(magnitude)
+            }
         }
     };
 }
@@ -442,6 +481,17 @@ magnitude_impl_int!(usize);
 magnitude_impl_int!(i32);
 magnitude_impl_int!(i8);
 magnitude_impl_int!(i16);
+
+distance_impl_float!(f32);
+distance_impl_float!(f64);
+distance_impl_int!(u8);
+distance_impl_int!(u16);
+distance_impl_int!(u32);
+distance_impl_int!(usize);
+distance_impl_int!(i32);
+distance_impl_int!(i8);
+distance_impl_int!(i16);
+
 in_between_impl!(f32);
 in_between_impl!(f64);
 vect_impl!(f32);
@@ -453,6 +503,7 @@ vect_impl!(i16);
 vect_impl!(i32);
 vect_impl!(u32);
 vect_impl!(usize);
+
 pub type V2f32 = Vector2<f32>;
 pub type V2f64 = Vector2<f64>;
 pub type V2i32 = Vector2<i16>;

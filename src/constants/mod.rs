@@ -6,18 +6,22 @@ use crate::{
 };
 
 pub const SCREEN_SIZE: V2u32 = Vector2::new(800, 600);
-pub const VIEW_PORT_SIZE: V2f32 = Vector2::new(800.0 * 2.0, 600.0 * 2.0);
-pub const BOID_SIZE: i16 = 1;
-pub const VIEW_DISTANCE: f32 = BOID_SIZE as f32 * 15.0 as f32;
+pub const MULTIP_VIEW: f32 = 1.0;
+pub const VIEW_PORT_SIZE: V2f32 = Vector2::new(
+    SCREEN_SIZE.x as f32 * MULTIP_VIEW,
+    SCREEN_SIZE.y as f32 * MULTIP_VIEW,
+);
+pub const BOID_SIZE: i16 = 4;
+pub const VIEW_DISTANCE: f32 = BOID_SIZE as f32 * 20.0 as f32;
 
 use std::cell::RefCell;
 
 thread_local!(pub static BORDER_BEHAVIOUR: RefCell<BorderBehaviourE> = RefCell::new(BorderBehaviourE::GoThrough));
 
-pub const MAX_BOID_SPEED: f32 = 6.1;
-pub const MAX_BOID_FORCE: f32 = 0.501;
+pub const MAX_BOID_SPEED: f32 = 4.1;
+pub const MAX_BOID_FORCE: f32 = 0.201;
 pub const UPDATE_EVERY_TICK: u8 = 1;
-pub const BOIDS_AMOUNT: u64 = 30000;
+pub const BOIDS_AMOUNT: u64 = 30;
 pub const MAX_BOID_IN_AREA: usize = (BOIDS_AMOUNT as usize * 1) / 100 as usize + 1;
 
 use bitflags::bitflags;
@@ -36,9 +40,9 @@ bitflags! {
 }
 pub struct BehaviourConsts;
 impl BehaviourConsts {
-    pub const ALLIGN_FACTOR: f32 = 0.3;
-    pub const COHESION_FACTOR: f32 = 0.3;
-    pub const SEPERATE_FACTOR: f32 = 0.3;
+    pub const ALLIGN_FACTOR: f32 = 0.03;
+    pub const COHESION_FACTOR: f32 = 0.002;
+    pub const SEPERATE_FACTOR: f32 = 0.03;
     pub const BOUND_FACTOR: f32 = 0.3;
 }
 

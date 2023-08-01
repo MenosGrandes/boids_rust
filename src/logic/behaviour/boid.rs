@@ -19,15 +19,15 @@ impl BorderBehaviour for Boid {
                 }
             }
             BorderBehaviourE::GoThrough => {
-                if self.position.x > VIEW_PORT_SIZE.x as f32 - (BOID_SIZE as f32) * 2.0 {
-                    self.position.x = BOID_SIZE as f32 * 2.0;
-                } else if self.position.x < BOID_SIZE as f32 * 2.0 {
-                    self.position.x = VIEW_PORT_SIZE.x as f32 - (BOID_SIZE as f32) * 2.0;
+                if self.position.x > VIEW_PORT_SIZE.x - 10.0 {
+                    self.position.x = 10.0;
+                } else if self.position.x < 10.0 {
+                    self.position.x = VIEW_PORT_SIZE.x as f32 - 10.0;
                 }
-                if self.position.y > VIEW_PORT_SIZE.y as f32 - (BOID_SIZE as f32) * 2.0 {
-                    self.position.y = BOID_SIZE as f32 * 2.0;
-                } else if self.position.y < BOID_SIZE as f32 * 2.0 {
-                    self.position.y = VIEW_PORT_SIZE.y as f32 - (BOID_SIZE as f32) * 2.0;
+                if self.position.y > VIEW_PORT_SIZE.y - 10.0 {
+                    self.position.y = 10.0;
+                } else if self.position.y < 10.0 {
+                    self.position.y = VIEW_PORT_SIZE.y - 10.0;
                 }
             }
         }

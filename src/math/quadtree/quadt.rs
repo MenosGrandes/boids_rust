@@ -210,7 +210,6 @@ fn get_all_boids_in_boundry_view_of_boid() {
             let r = Region::rect_from_center_with_distance(b.position, distance);
             let mut boids_in_region = vec![];
             q.get_all_boids_in_boundry(&r, &mut boids_in_region);
-            println!("{}", b.id);
             assert_eq!(boids_in_region.len(), 1); // its failing for somre reason MenosGrandes
         }
     }

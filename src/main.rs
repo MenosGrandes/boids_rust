@@ -1,10 +1,10 @@
 pub mod camera;
 pub mod constants;
+pub mod ecs;
 pub mod game;
 pub mod graphics;
 pub mod logic;
 pub mod math;
-pub mod ecs;
 
 extern crate approx;
 extern crate crossbeam;
@@ -33,18 +33,18 @@ use log4rs::config::{Appender, Config, Root};
 use log4rs::encode::pattern::PatternEncoder;
 
 pub fn main() -> Result<(), String> {
-        let ttf_context = sdl2::ttf::init().unwrap();
-        let gss = GfxSubsystem::new(&ttf_context);
+    let ttf_context = sdl2::ttf::init().unwrap();
+    let gss = GfxSubsystem::new(&ttf_context);
 
-        let video_subsystem = gss.sdl_context.video()?;
-        let window = video_subsystem
-            .window("Boids", SCREEN_SIZE.x as u32, SCREEN_SIZE.y as u32)
-            .position_centered()
-            .opengl()
-            .build()
-            .map_err(|e| e.to_string())?;
+    let video_subsystem = gss.sdl_context.video()?;
+    let window = video_subsystem
+        .window("Boids", SCREEN_SIZE.x as u32, SCREEN_SIZE.y as u32)
+        .position_centered()
+        .opengl()
+        .build()
+        .map_err(|e| e.to_string())?;
 
-        let mut event_pump = gss.sdl_context.event_pump()?;
+    let mut event_pump = gss.sdl_context.event_pump()?;
     let mut renderer = RendererManager::new(window, gss);
 
     let mut fps_manager: FPSManager = FPSManager::new();
@@ -54,8 +54,8 @@ pub fn main() -> Result<(), String> {
     let mut boid_manager = BoidManager::new(r.clone());
     boid_manager.spawn_boid(BOIDS_AMOUNT);
 
-
-    let mut camera = camera::Camera::new(r.get_center_point());
+    let mut camera = camera::Camera::new(r.left_up);
+    log::info!("camera position {:?}", camera);
 
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -123,8 +123,8 @@ pub fn main() -> Result<(), String> {
                 _ => {}
             }
         }
-        boid_manager.update();
         renderer.draw(&mut boid_manager, &camera);
+        boid_manager.update();
         ::std::thread::sleep(Duration::new(
             0,
             1_000_000_000u32 / fps_manager.get_framerate() as u32,

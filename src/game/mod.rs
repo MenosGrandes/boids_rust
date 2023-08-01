@@ -11,14 +11,11 @@ use crate::{
     graphics::renderer::{GfxSubsystem, RendererManager},
 };
 
-pub struct Game {
-}
-pub struct GameBuilder {
-}
+pub struct Game {}
+pub struct GameBuilder {}
 impl Game {}
 impl GameBuilder {
-    pub fn build(){
-    }
+    pub fn build() {}
     fn init_sdl(&self) -> Result<(), String> {
         Ok(())
     }
