@@ -13,8 +13,8 @@ extern crate sdl2;
 use std::time::Duration;
 
 use constants::{
-    BehaviourEnabled, DrawPrimitives, BEHAVIOUR_ENABLED, BOIDS_AMOUNT, BORDER_BEHAVIOUR,
-    DRAW_PRIMITIVES, SCREEN_SIZE, VIEW_PORT_SIZE,
+    BehaviourConsts, BehaviourEnabled, DrawPrimitives, BEHAVIOUR_ENABLED, BOIDS_AMOUNT,
+    BORDER_BEHAVIOUR, DRAW_PRIMITIVES, MAX_BOID_SPEED, SCREEN_SIZE, VIEW_PORT_SIZE,
 };
 use game::GameBuilder;
 use graphics::renderer::{GfxSubsystem, RendererManager};
@@ -32,103 +32,180 @@ use log4rs::append::file::FileAppender;
 use log4rs::config::{Appender, Config, Root};
 use log4rs::encode::pattern::PatternEncoder;
 
-pub fn main() -> Result<(), String> {
-    let ttf_context = sdl2::ttf::init().unwrap();
-    let gss = GfxSubsystem::new(&ttf_context);
+use sdl2::gfx::primitives::DrawRenderer;
+use sdl2::rect::{Point, Rect};
+use sdl2::render::WindowCanvas;
+use specs::{
+    Builder, Component, DispatcherBuilder, Entities, ReadStorage, System, VecStorage, World,
+    WorldExt, WriteStorage,
+};
 
-    let video_subsystem = gss.sdl_context.video()?;
+use specs::Join;
+
+use crate::math::vec::{Distance, Magnitude, V2f32};
+#[derive(Debug)]
+struct Position {
+    v: V2f32,
+}
+
+impl Component for Position {
+    type Storage = VecStorage<Self>;
+}
+
+#[derive(Debug)]
+struct Velocity {
+    v: V2f32,
+}
+
+impl Component for Velocity {
+    type Storage = VecStorage<Self>;
+}
+
+#[derive(Debug)]
+struct AvgVelocity {
+    v: V2f32,
+}
+
+impl Component for AvgVelocity {
+    type Storage = VecStorage<Self>;
+}
+
+struct UpdatePos;
+
+impl<'a> System<'a> for UpdatePos {
+    type SystemData = (
+        ReadStorage<'a, AvgVelocity>,
+        WriteStorage<'a, Velocity>,
+        WriteStorage<'a, Position>,
+    );
+
+    fn run(&mut self, (avg_vel, mut vel, mut pos): Self::SystemData) {
+        for (avg_vel, vel, pos) in (&avg_vel, &mut vel, &mut pos).join() {
+            pos.v += vel.v;
+            vel.v += avg_vel.v;
+            vel.v.limit(MAX_BOID_SPEED)
+        }
+    }
+}
+
+struct AvgVelocitySystem;
+
+impl<'a> System<'a> for AvgVelocitySystem {
+    type SystemData = (
+        Entities<'a>,
+        ReadStorage<'a, Position>,
+        ReadStorage<'a, Velocity>,
+        WriteStorage<'a, AvgVelocity>,
+    );
+
+    fn run(&mut self, (entities, vel, position, mut avg_vel): Self::SystemData) {
+        for e in entities.join() {
+            let avg_vel_e = avg_vel.get_mut(e);
+            if let Some(avg_vel_e) = avg_vel_e {
+                for vel in vel.join() {
+                    avg_vel_e.v += vel.v;
+                }
+                avg_vel_e.v.set_magnitude(MAX_BOID_SPEED);
+                avg_vel_e.v -= vel.get(e).unwrap().v;
+                avg_vel_e.v *= BehaviourConsts::ALLIGN_FACTOR;
+            };
+        }
+    }
+}
+struct AllignSystem;
+
+impl<'a> System<'a> for AllignSystem {
+    type SystemData = (ReadStorage<'a, Velocity>, WriteStorage<'a, Position>);
+
+    fn run(&mut self, (vel, mut pos): Self::SystemData) {
+        for (vel, pos) in (&vel, &mut pos).join() {
+            pos.v += vel.v * 0.05;
+        }
+    }
+}
+// Type alias for the data needed by the renderer
+pub type SystemDataDraw<'a> = ReadStorage<'a, Position>;
+fn draw(canvas: &mut WindowCanvas, data: SystemDataDraw) {
+    canvas.set_draw_color(Color::GREEN);
+    canvas.clear();
+    for position in data.join() {
+        let p: Point = Point::new(position.v.x as i32, position.v.y as i32);
+        let r = Rect::from_center(p, 2, 2);
+        let _ = canvas.rectangle(
+            r.top_left().x as i16,
+            r.top_left().y as i16,
+            r.bottom_right().x as i16,
+            r.bottom_right().y as i16,
+            Color::BLUE,
+        );
+    }
+    canvas.present();
+}
+use sdl2::pixels::Color;
+fn build_boid(world: &mut World) {
+    let mut c = Vector2::random(-0.5, 0.5);
+    c.set_magnitude(10.0);
+    let rand_pos =
+        Vector2::random_from_vec(Vector2::new(0.0, 800 as f32), Vector2::new(0.0, 600 as f32));
+    world
+        .create_entity()
+        .with(Position { v: rand_pos })
+        .with(Velocity { v: c })
+        .with(AvgVelocity { v: V2f32::zero() })
+        .build();
+}
+
+pub fn main() -> Result<(), String> {
+    let mut world = World::new();
+    world.register::<Position>();
+    world.register::<Velocity>();
+    world.register::<AvgVelocity>();
+
+    for _ in 0..1000 {
+        build_boid(&mut world);
+    }
+
+    let mut dispatcher = DispatcherBuilder::new()
+        .with(AvgVelocitySystem, "allign", &[])
+        .with(UpdatePos, "update_pos", &["allign"])
+        .build();
+
+    /*
+     * DRAW!
+     * */
+    let sdl_context = sdl2::init()?;
+    let video_subsystem = sdl_context.video()?;
+
     let window = video_subsystem
-        .window("Boids", SCREEN_SIZE.x as u32, SCREEN_SIZE.y as u32)
+        .window("rust-sdl2 demo: Video", 800, 600)
         .position_centered()
         .opengl()
         .build()
         .map_err(|e| e.to_string())?;
 
-    let mut event_pump = gss.sdl_context.event_pump()?;
-    let mut renderer = RendererManager::new(window, gss);
+    let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
 
-    let mut fps_manager: FPSManager = FPSManager::new();
-    fps_manager.set_framerate(100)?;
-
-    let r: Region = Region::new(Vector2::new(0.0, 0.0), VIEW_PORT_SIZE);
-    let mut boid_manager = BoidManager::new(r.clone());
-    boid_manager.spawn_boid(BOIDS_AMOUNT);
-
-    let mut camera = camera::Camera::new(r.left_up);
-    log::info!("camera position {:?}", camera);
+    let mut event_pump = sdl_context.event_pump()?;
 
     'running: loop {
         for event in event_pump.poll_iter() {
             match event {
-                Event::Quit { .. } => break 'running,
-                Event::KeyDown {
-                    keycode: Some(keycode),
+                Event::Quit { .. }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
                     ..
-                } => match keycode {
-                    Keycode::W => {
-                        boid_manager.add_boid(1);
-                    }
-                    Keycode::R => {
-                        BORDER_BEHAVIOUR.with(|value: &std::cell::RefCell<BorderBehaviourE>| {
-                            let v = match *value.borrow() {
-                                BorderBehaviourE::GoThrough => BorderBehaviourE::Reflect,
-                                BorderBehaviourE::Reflect => BorderBehaviourE::GoThrough,
-                            };
-                            *value.borrow_mut() = v;
-                        });
-                    }
-                    Keycode::Num1 => unsafe {
-                        BEHAVIOUR_ENABLED ^= BehaviourEnabled::COHESION;
-                    },
-                    Keycode::Num2 => unsafe {
-                        BEHAVIOUR_ENABLED ^= BehaviourEnabled::ALLIGN;
-                    },
-                    Keycode::Num3 => unsafe {
-                        BEHAVIOUR_ENABLED ^= BehaviourEnabled::SEPERATE;
-                    },
-
-                    Keycode::Num4 => unsafe {
-                        BEHAVIOUR_ENABLED ^= BehaviourEnabled::BOUND;
-                    },
-                    Keycode::Num5 => {
-                        DRAW_PRIMITIVES.with(|value| {
-                            *value.borrow_mut() ^= DrawPrimitives::QUAD_TREE;
-                        });
-                    }
-                    Keycode::Num6 => {
-                        DRAW_PRIMITIVES.with(|value| {
-                            *value.borrow_mut() ^= DrawPrimitives::BOID_VIEW;
-                        });
-                    }
-                    Keycode::Num7 => {
-                        DRAW_PRIMITIVES.with(|value| {
-                            *value.borrow_mut() ^= DrawPrimitives::BOUND_VIEW;
-                        });
-                    }
-                    Keycode::Left => {
-                        camera.pos.x -= 20.0;
-                    }
-                    Keycode::Right => {
-                        camera.pos.x += 20.0;
-                    }
-                    Keycode::Down => {
-                        camera.pos.y += 20.0;
-                    }
-                    Keycode::Up => {
-                        camera.pos.y -= 20.0;
-                    }
-                    Keycode::Escape => break 'running,
-                    _ => {}
-                },
+                } => break 'running,
                 _ => {}
             }
         }
-        renderer.draw(&mut boid_manager, &camera);
-        boid_manager.update();
-        ::std::thread::sleep(Duration::new(
-            0,
-            1_000_000_000u32 / fps_manager.get_framerate() as u32,
-        ));
+
+        //canvas.present();
+        // The rest of the game loop goes here...
+
+        dispatcher.dispatch(&mut world);
+        world.maintain();
+        draw(&mut canvas, world.system_data());
+        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 30));
     }
 
     Ok(())
